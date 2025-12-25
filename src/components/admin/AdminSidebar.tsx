@@ -43,7 +43,7 @@ const navigationGroups: NavGroup[] = [
       { title: "Exams", href: "/admin/exams", icon: GraduationCap },
       { title: "Colleges", href: "/admin/colleges", icon: Building2 },
       { title: "Scholarships", href: "/admin/scholarships", icon: Award },
-      { title: "Campaigns", href: "/admin/campaigns", icon: Megaphone },
+      { title: "Landing Page Campaigns", href: "/admin/campaigns", icon: Megaphone },
     ],
   },
   {
@@ -56,11 +56,16 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Data",
+    title: "Utilities",
     items: [
-      { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
       { title: "Slug Registry", href: "/admin/slug-registry", icon: Link2 },
       { title: "Redirects", href: "/admin/redirects", icon: ArrowRightLeft },
+    ],
+  },
+  {
+    title: "Analytics",
+    items: [
+      { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
     ],
   },
 ];
