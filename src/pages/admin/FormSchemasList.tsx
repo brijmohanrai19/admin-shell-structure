@@ -1,75 +1,135 @@
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { DataTable } from "@/components/admin/DataTable";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter, MoreHorizontal, Eye } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Edit, Eye, GitBranch } from "lucide-react";
 
-const placeholderSchemas = [
-  { id: "1", name: "Exam Registration", fields: 12, submissions: 1234, lastModified: "1 day ago" },
-  { id: "2", name: "College Inquiry", fields: 8, submissions: 567, lastModified: "3 days ago" },
-  { id: "3", name: "Scholarship Application", fields: 15, submissions: 234, lastModified: "Yesterday" },
-  { id: "4", name: "Contact Form", fields: 5, submissions: 890, lastModified: "1 week ago" },
-  { id: "5", name: "Feedback Survey", fields: 10, submissions: 456, lastModified: "2 days ago" },
+const mockFormSchemas = [
+  { id: "1", name: "Engineering Admission Form", version: 3, is_latest: true, status: "published", field_count: 12, used_by_count: 15, created_at: "2024-01-15" },
+  { id: "2", name: "Engineering Admission Form", version: 2, is_latest: false, status: "retired", field_count: 10, used_by_count: 8, created_at: "2023-12-01" },
+  { id: "3", name: "Engineering Admission Form", version: 1, is_latest: false, status: "retired", field_count: 8, used_by_count: 3, created_at: "2023-10-10" },
+  { id: "4", name: "Scholarship Application Form", version: 2, is_latest: true, status: "published", field_count: 18, used_by_count: 10, created_at: "2024-02-20" },
+  { id: "5", name: "Scholarship Application Form", version: 1, is_latest: false, status: "retired", field_count: 15, used_by_count: 5, created_at: "2024-01-05" },
+  { id: "6", name: "General Inquiry Form", version: 1, is_latest: true, status: "draft", field_count: 6, used_by_count: 0, created_at: "2024-03-01" },
+  { id: "7", name: "College Application Form", version: 1, is_latest: true, status: "published", field_count: 20, used_by_count: 22, created_at: "2024-01-10" },
 ];
 
+type StatusType = "published" | "retired" | "draft";
+
+const getStatusColor = (status: StatusType) => {
+  switch (status) {
+    case "published":
+      return "bg-green-500 text-white";
+    case "retired":
+      return "bg-gray-500 text-white";
+    case "draft":
+      return "bg-yellow-500 text-white";
+    default:
+      return "bg-gray-500 text-white";
+  }
+};
+
 export default function FormSchemasList() {
+  // Group form schemas by name
+  const groupedSchemas = mockFormSchemas.reduce((acc, schema) => {
+    if (!acc[schema.name]) {
+      acc[schema.name] = [];
+    }
+    acc[schema.name].push(schema);
+    return acc;
+  }, {} as Record<string, typeof mockFormSchemas>);
+
   return (
     <div className="min-h-screen">
       <PageHeader
         title="Form Schemas"
         description="Manage form definitions and field configurations"
         actions={
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Schema
-          </Button>
+          <Link to="/admin/form-schemas/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Form Schema
+            </Button>
+          </Link>
         }
       />
 
       <div className="p-8 space-y-6">
-        {/* Filters */}
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search form schemas..." className="pl-10" />
-          </div>
-          <Button variant="outline">
-            <Filter className="mr-2 h-4 w-4" />
-            Filters
-          </Button>
-        </div>
+        {Object.entries(groupedSchemas).map(([schemaName, versions]) => (
+          <Card key={schemaName}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>{schemaName}</span>
+                <Badge variant="outline">{versions.length} versions</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {versions
+                  .sort((a, b) => b.version - a.version)
+                  .map((schema) => (
+                    <div
+                      key={schema.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">v{schema.version}</Badge>
+                          {schema.is_latest && (
+                            <Badge className="bg-blue-500 text-white">
+                              Latest
+                            </Badge>
+                          )}
+                        </div>
 
-        {/* Table */}
-        <DataTable
-          columns={[
-            { key: "name", label: "Schema Name" },
-            { key: "fields", label: "Fields" },
-            { key: "submissions", label: "Submissions" },
-            { key: "lastModified", label: "Last Modified" },
-            { key: "actions", label: "", className: "text-right" },
-          ]}
-          rows={placeholderSchemas.map((schema) => ({
-            name: <span className="font-medium">{schema.name}</span>,
-            fields: (
-              <Badge variant="secondary" className="font-normal">
-                {schema.fields} fields
-              </Badge>
-            ),
-            submissions: schema.submissions.toLocaleString(),
-            lastModified: <span className="text-muted-foreground">{schema.lastModified}</span>,
-            actions: (
-              <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon">
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
+                        <Badge className={getStatusColor(schema.status)}>
+                          {schema.status}
+                        </Badge>
+
+                        <div className="text-sm text-muted-foreground">
+                          {schema.field_count} fields
+                        </div>
+
+                        <div className="text-sm text-muted-foreground">
+                          Used by {schema.used_by_count} campaigns
+                        </div>
+
+                        <div className="text-sm text-muted-foreground">
+                          Created {new Date(schema.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Link to={`/admin/form-schemas/${schema.id}`}>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                        </Link>
+
+                        {schema.status === "draft" && (
+                          <Link to={`/admin/form-schemas/${schema.id}/edit`}>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </Link>
+                        )}
+
+                        {schema.is_latest && (
+                          <Button variant="outline" size="sm">
+                            <GitBranch className="h-4 w-4 mr-1" />
+                            New Version
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
               </div>
-            ),
-          }))}
-        />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
