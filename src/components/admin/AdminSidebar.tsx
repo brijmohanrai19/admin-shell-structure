@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -16,8 +16,11 @@ import {
   ChevronDown,
   ChevronRight,
   Settings,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 interface NavItem {
   title: string;
@@ -72,6 +75,8 @@ const navigationGroups: NavGroup[] = [
 
 export function AdminSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
 
   const toggleGroup = (title: string) => {
@@ -80,6 +85,11 @@ export function AdminSidebar() {
         ? prev.filter((t) => t !== title)
         : [...prev, title]
     );
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   const isActive = (href: string) => location.pathname.startsWith(href);
@@ -145,20 +155,31 @@ export function AdminSidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-sidebar-border p-4">
+        <div className="border-t border-sidebar-border p-4 space-y-3">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-              <span className="text-xs font-medium text-sidebar-foreground">AD</span>
+              <span className="text-xs font-medium text-sidebar-foreground">
+                {user?.name.split(' ').map(n => n[0]).join('') || 'AD'}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-sidebar-foreground truncate">
-                Admin User
+                {user?.name || 'Admin User'}
               </p>
               <p className="text-xs text-sidebar-muted truncate">
-                admin@example.com
+                {user?.email || 'admin@example.com'}
               </p>
             </div>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </div>
     </aside>

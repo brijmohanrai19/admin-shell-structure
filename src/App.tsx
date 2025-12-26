@@ -3,7 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+
+// Auth Pages
+import Login from "@/pages/Login";
 
 // Admin Pages
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -49,67 +54,79 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Redirect root to admin dashboard */}
-          <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
 
-            {/* Entities */}
-            <Route path="exams" element={<ExamsList />} />
-            <Route path="exams/new" element={<NewExam />} />
-            <Route path="exams/:id" element={<ExamDetail />} />
+            {/* Redirect root to admin dashboard */}
+            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
 
-            <Route path="colleges" element={<CollegesList />} />
-            <Route path="colleges/new" element={<NewCollege />} />
-            <Route path="colleges/:id" element={<CollegeDetail />} />
+            {/* Protected Admin Routes */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
 
-            <Route path="scholarships" element={<ScholarshipsList />} />
-            <Route path="scholarships/new" element={<NewScholarship />} />
-            <Route path="scholarships/:id" element={<ScholarshipDetail />} />
+              {/* Entities */}
+              <Route path="exams" element={<ExamsList />} />
+              <Route path="exams/new" element={<NewExam />} />
+              <Route path="exams/:id" element={<ExamDetail />} />
 
-            <Route path="campaigns" element={<CampaignsList />} />
-            <Route path="campaigns/new" element={<NewCampaign />} />
-            <Route path="campaigns/:id" element={<CampaignDetail />} />
+              <Route path="colleges" element={<CollegesList />} />
+              <Route path="colleges/new" element={<NewCollege />} />
+              <Route path="colleges/:id" element={<CollegeDetail />} />
 
-            {/* System */}
-            <Route path="templates" element={<TemplatesList />} />
-            <Route path="templates/new" element={<NewTemplate />} />
-            <Route path="templates/:id" element={<TemplateDetail />} />
-            <Route path="templates/:id/edit" element={<EditTemplate />} />
+              <Route path="scholarships" element={<ScholarshipsList />} />
+              <Route path="scholarships/new" element={<NewScholarship />} />
+              <Route path="scholarships/:id" element={<ScholarshipDetail />} />
 
-            <Route path="form-schemas" element={<FormSchemasList />} />
-            <Route path="form-schemas/new" element={<NewFormSchema />} />
-            <Route path="form-schemas/:id" element={<FormSchemaDetail />} />
-            <Route path="form-schemas/:id/edit" element={<EditFormSchema />} />
+              <Route path="campaigns" element={<CampaignsList />} />
+              <Route path="campaigns/new" element={<NewCampaign />} />
+              <Route path="campaigns/:id" element={<CampaignDetail />} />
 
-            <Route path="trackers" element={<TrackersList />} />
-            <Route path="trackers/new" element={<NewTracker />} />
-            <Route path="trackers/:id" element={<TrackerDetail />} />
-            <Route path="trackers/:id/edit" element={<EditTracker />} />
-            <Route path="trackers/:id/rules" element={<TrackerRules />} />
+              {/* System */}
+              <Route path="templates" element={<TemplatesList />} />
+              <Route path="templates/new" element={<NewTemplate />} />
+              <Route path="templates/:id" element={<TemplateDetail />} />
+              <Route path="templates/:id/edit" element={<EditTemplate />} />
 
-            <Route path="seo" element={<SeoList />} />
+              <Route path="form-schemas" element={<FormSchemasList />} />
+              <Route path="form-schemas/new" element={<NewFormSchema />} />
+              <Route path="form-schemas/:id" element={<FormSchemaDetail />} />
+              <Route path="form-schemas/:id/edit" element={<EditFormSchema />} />
 
-            {/* Analytics */}
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="analytics/campaigns/:id" element={<CampaignAnalytics />} />
-            <Route path="analytics/exams/:id" element={<ExamAnalytics />} />
+              <Route path="trackers" element={<TrackersList />} />
+              <Route path="trackers/new" element={<NewTracker />} />
+              <Route path="trackers/:id" element={<TrackerDetail />} />
+              <Route path="trackers/:id/edit" element={<EditTracker />} />
+              <Route path="trackers/rules" element={<TrackerRules />} />
 
-            {/* Utilities */}
-            <Route path="slug-registry" element={<SlugRegistry />} />
-            <Route path="redirects" element={<RedirectsList />} />
-            <Route path="redirects/new" element={<NewRedirect />} />
-          </Route>
-          
-          {/* Catch-all */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+              <Route path="seo" element={<SeoList />} />
+
+              {/* Analytics */}
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="analytics/campaigns/:id" element={<CampaignAnalytics />} />
+              <Route path="analytics/exams/:id" element={<ExamAnalytics />} />
+
+              {/* Utilities */}
+              <Route path="slug-registry" element={<SlugRegistry />} />
+              <Route path="redirects" element={<RedirectsList />} />
+              <Route path="redirects/new" element={<NewRedirect />} />
+            </Route>
+
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
