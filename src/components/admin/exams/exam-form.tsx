@@ -39,9 +39,10 @@ export interface ExamFormProps {
   initialData?: Partial<ExamFormData>;
   onSubmit: (data: ExamFormData) => void;
   onCancel: () => void;
+  disabled?: boolean;
 }
 
-export function ExamForm({ initialData, onSubmit, onCancel }: ExamFormProps) {
+export function ExamForm({ initialData, onSubmit, onCancel, disabled }: ExamFormProps) {
   const [formData, setFormData] = useState<ExamFormData>({
     name: initialData?.name || "",
     slug: initialData?.slug || "",
@@ -398,17 +399,18 @@ export function ExamForm({ initialData, onSubmit, onCancel }: ExamFormProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="flex gap-3 justify-end">
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={disabled}>
               Cancel
             </Button>
             <Button
               type="button"
               variant="secondary"
               onClick={() => handleSubmit("draft")}
+              disabled={disabled}
             >
               Save Draft
             </Button>
-            <Button type="button" onClick={() => handleSubmit("live")}>
+            <Button type="button" onClick={() => handleSubmit("live")} disabled={disabled}>
               Publish
             </Button>
           </div>

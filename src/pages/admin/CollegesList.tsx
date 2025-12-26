@@ -1,9 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
 
 const placeholderColleges = [
@@ -15,6 +21,8 @@ const placeholderColleges = [
 ];
 
 export default function CollegesList() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen">
       <PageHeader
@@ -58,9 +66,29 @@ export default function CollegesList() {
             type: college.type,
             status: <StatusBadge status={college.status} />,
             actions: (
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate(`/admin/colleges/${college.id}`)}>
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => {
+                      if (confirm(`Delete ${college.name}?`)) {
+                        console.log("Delete college:", college.id);
+                        alert("Delete functionality coming soon");
+                      }
+                    }}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ),
           }))}
         />

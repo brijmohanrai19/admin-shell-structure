@@ -1,9 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Plus, Search, Filter, MoreHorizontal, ExternalLink } from "lucide-react";
 
 const placeholderCampaigns = [
@@ -15,6 +21,8 @@ const placeholderCampaigns = [
 ];
 
 export default function CampaignsList() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen">
       <PageHeader
@@ -65,9 +73,29 @@ export default function CampaignsList() {
             views: campaign.views,
             status: <StatusBadge status={campaign.status} />,
             actions: (
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate(`/admin/campaigns/${campaign.id}`)}>
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => {
+                      if (confirm(`Delete ${campaign.name}?`)) {
+                        console.log("Delete campaign:", campaign.id);
+                        alert("Delete functionality coming soon");
+                      }
+                    }}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ),
           }))}
         />

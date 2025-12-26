@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { API_CONFIG } from "@/config/api";
 
 interface User {
   id: string;
@@ -12,10 +13,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const API_BASE_URL = API_CONFIG.BASE_URL;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -23,67 +26,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check for existing session on mount
   useEffect(() => {
-    const checkSession = () => {
-      // Check localStorage for session (temporary - will be httpOnly cookie later)
-      const sessionData = localStorage.getItem("admin_session");
-      if (sessionData) {
-        try {
-          const session = JSON.parse(sessionData);
-          // Check if session expired (24 hours)
-          const now = Date.now();
-          if (session.expiresAt > now) {
-            setUser(session.user);
-          } else {
-            localStorage.removeItem("admin_session");
-          }
-        } catch (error) {
-          console.error("Invalid session data");
-          localStorage.removeItem("admin_session");
-        }
-      }
-      setLoading(false);
-    };
-
     checkSession();
   }, []);
+
+  const checkSession = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.ME}`, {
+        method: "GET",
+        credentials: "include", // Important: Send cookies
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("Session check failed:", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setLoading(true);
 
-    // MOCK AUTHENTICATION
-    // TODO: Replace with real API call in Phase 9
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.LOGIN}`, {
+        method: "POST",
+        credentials: "include", // Important: Allow cookies
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Mock validation
-    if (email === "admin@example.com" && password === "admin123") {
-      const mockUser: User = {
-        id: "1",
-        email: "admin@example.com",
-        name: "Admin User",
-        role: "admin",
-      };
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Login failed");
+      }
 
-      // Create session (expires in 24 hours)
-      const session = {
-        user: mockUser,
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-      };
-
-      // Store in localStorage (temporary - will be httpOnly cookie later)
-      localStorage.setItem("admin_session", JSON.stringify(session));
-
-      setUser(mockUser);
+      const data = await response.json();
+      setUser(data.user);
+    } catch (error) {
+      throw error; // Re-throw to be caught by Login page
+    } finally {
       setLoading(false);
-    } else {
-      setLoading(false);
-      throw new Error("Invalid email or password");
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("admin_session");
-    setUser(null);
+  const logout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.LOGOUT}`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (

@@ -1,47 +1,95 @@
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ExamForm } from "@/components/admin/exams/exam-form";
+import { examsAPI, Exam } from "@/services/api/exams";
 
 export default function ExamDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [exam, setExam] = useState<Exam | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock initial data (TODO: fetch from API)
-  const mockExam = {
-    name: "VITEEE 2026",
-    slug: "viteee-2026",
-    conducting_body: "VIT University",
-    exam_date: "2026-04-15",
-    application_start_date: "2025-11-01",
-    application_end_date: "2026-02-28",
-    description: "VIT Engineering Entrance Examination for admission to VIT campuses.",
-    eligibility: "Candidates must have passed 10+2 with Physics, Chemistry, and Mathematics.",
-    exam_pattern: "Multiple choice questions with negative marking.",
-    important_links: {
-      "Official Website": "https://vit.ac.in",
-      "Syllabus": "https://vit.ac.in/syllabus",
-    },
-    priority: 10,
-    status: "live" as const,
+  useEffect(() => {
+    if (id) {
+      loadExam(id);
+    }
+  }, [id]);
+
+  const loadExam = async (examId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await examsAPI.get(examId);
+      setExam(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load exam");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (data: any) => {
-    console.log("Updating exam:", id, data);
-    // TODO: PATCH /admin/exams/:id
-    alert("Exam updated (mock)");
-    navigate("/admin/exams");
+  const handleSubmit = async (data: any) => {
+    if (!id) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+      await examsAPI.update(id, data);
+      alert("Exam updated successfully!");
+      navigate("/admin/exams");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to update exam";
+      setError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
     navigate("/admin/exams");
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading exam...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-6 max-w-4xl">
+        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!exam) {
+    return (
+      <div className="container mx-auto py-6 max-w-4xl">
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700">
+          Exam not found
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">Edit Exam</h1>
+    <div className="container mx-auto py-6 max-w-4xl">
       <ExamForm
-        initialData={mockExam}
+        initialData={exam}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
+        disabled={saving}
       />
     </div>
   );
