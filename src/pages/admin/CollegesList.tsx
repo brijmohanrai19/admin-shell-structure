@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -20,10 +21,12 @@ export default function CollegesList() {
         title="Colleges"
         description="Manage all colleges and institutions"
         actions={
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add College
-          </Button>
+          <Link to="/admin/colleges/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add College
+            </Button>
+          </Link>
         }
       />
 

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -20,10 +21,12 @@ export default function ScholarshipsList() {
         title="Scholarships"
         description="Manage scholarships and financial aid programs"
         actions={
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Scholarship
-          </Button>
+          <Link to="/admin/scholarships/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Scholarship
+            </Button>
+          </Link>
         }
       />
 
