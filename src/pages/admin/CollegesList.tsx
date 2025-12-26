@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
 
 const placeholderColleges = [
-  { id: "1", name: "IIT Delhi", location: "New Delhi", type: "Government", status: "active" as const },
-  { id: "2", name: "IIT Bombay", location: "Mumbai", type: "Government", status: "active" as const },
-  { id: "3", name: "BITS Pilani", location: "Pilani", type: "Private", status: "active" as const },
+  { id: "1", name: "IIT Delhi", location: "New Delhi", type: "Government", status: "live" as const },
+  { id: "2", name: "IIT Bombay", location: "Mumbai", type: "Government", status: "live" as const },
+  { id: "3", name: "BITS Pilani", location: "Pilani", type: "Private", status: "live" as const },
   { id: "4", name: "NIT Trichy", location: "Tiruchirappalli", type: "Government", status: "draft" as const },
-  { id: "5", name: "VIT Vellore", location: "Vellore", type: "Private", status: "pending" as const },
+  { id: "5", name: "VIT Vellore", location: "Vellore", type: "Private", status: "draft" as const },
 ];
 
 export default function CollegesList() {

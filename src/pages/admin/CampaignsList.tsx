@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, MoreHorizontal, ExternalLink } from "lucide-react";
 
 const placeholderCampaigns = [
-  { id: "1", name: "JEE Main 2025 Landing", slug: "/jee-main-2025", template: "Exam LP", views: "12,450", status: "published" as const },
-  { id: "2", name: "NEET UG Preparation", slug: "/neet-ug-prep", template: "Course LP", views: "8,320", status: "published" as const },
+  { id: "1", name: "JEE Main 2025 Landing", slug: "/jee-main-2025", template: "Exam LP", views: "12,450", status: "live" as const },
+  { id: "2", name: "NEET UG Preparation", slug: "/neet-ug-prep", template: "Course LP", views: "8,320", status: "live" as const },
   { id: "3", name: "MIT Scholarship Program", slug: "/mit-scholarship", template: "Scholarship LP", views: "0", status: "draft" as const },
-  { id: "4", name: "IIT Delhi Admissions", slug: "/iit-delhi", template: "College LP", views: "5,100", status: "active" as const },
+  { id: "4", name: "IIT Delhi Admissions", slug: "/iit-delhi", template: "College LP", views: "5,100", status: "paused" as const },
   { id: "5", name: "CAT 2024 Results", slug: "/cat-2024-results", template: "Results LP", views: "45,000", status: "archived" as const },
 ];
 

@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
 
 const placeholderScholarships = [
-  { id: "1", name: "Merit Scholarship 2025", provider: "Government", amount: "₹50,000", status: "active" as const },
-  { id: "2", name: "Sports Excellence Award", provider: "MHRD", amount: "₹75,000", status: "active" as const },
+  { id: "1", name: "Merit Scholarship 2025", provider: "Government", amount: "₹50,000", status: "live" as const },
+  { id: "2", name: "Sports Excellence Award", provider: "MHRD", amount: "₹75,000", status: "live" as const },
   { id: "3", name: "Women in STEM Grant", provider: "DST", amount: "₹1,00,000", status: "draft" as const },
-  { id: "4", name: "SC/ST Scholarship", provider: "Ministry of Social Justice", amount: "₹60,000", status: "active" as const },
-  { id: "5", name: "Innovation Fellowship", provider: "Private Foundation", amount: "₹2,00,000", status: "pending" as const },
+  { id: "4", name: "SC/ST Scholarship", provider: "Ministry of Social Justice", amount: "₹60,000", status: "live" as const },
+  { id: "5", name: "Innovation Fellowship", provider: "Private Foundation", amount: "₹2,00,000", status: "draft" as const },
 ];
 
 export default function ScholarshipsList() {

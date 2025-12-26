@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
 
 const placeholderExams = [
-  { id: "1", name: "JEE Main 2025", category: "Engineering", status: "active" as const, date: "Apr 2025" },
+  { id: "1", name: "JEE Main 2025", category: "Engineering", status: "live" as const, date: "Apr 2025" },
   { id: "2", name: "NEET UG 2025", category: "Medical", status: "draft" as const, date: "May 2025" },
-  { id: "3", name: "CAT 2024", category: "Management", status: "published" as const, date: "Nov 2024" },
-  { id: "4", name: "GATE 2025", category: "Engineering", status: "active" as const, date: "Feb 2025" },
-  { id: "5", name: "CLAT 2025", category: "Law", status: "pending" as const, date: "Dec 2024" },
+  { id: "3", name: "CAT 2024", category: "Management", status: "closed" as const, date: "Nov 2024" },
+  { id: "4", name: "GATE 2025", category: "Engineering", status: "live" as const, date: "Feb 2025" },
+  { id: "5", name: "CLAT 2025", category: "Law", status: "draft" as const, date: "Dec 2024" },
 ];
 
 export default function ExamsList() {
