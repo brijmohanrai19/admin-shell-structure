@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +84,7 @@ export default function NewFormSchema() {
 
   const handleSaveDraft = async () => {
     if (!formData.name.trim()) {
-      alert("Schema name is required");
+      toast.error("Schema name is required");
       return;
     }
 
@@ -109,12 +110,12 @@ export default function NewFormSchema() {
         status: "draft",
       });
 
-      alert("Form schema saved as draft!");
+      toast.success("Form schema saved as draft!");
       navigate("/admin/form-schemas");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to save form schema";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -122,18 +123,18 @@ export default function NewFormSchema() {
 
   const handlePublish = async () => {
     if (!formData.name.trim()) {
-      alert("Schema name is required");
+      toast.error("Schema name is required");
       return;
     }
 
     if (formData.fields.length === 0) {
-      alert("Add at least one field before publishing");
+      toast.error("Add at least one field before publishing");
       return;
     }
 
     const emptyLabels = formData.fields.filter((f) => !f.label.trim());
     if (emptyLabels.length > 0) {
-      alert("All fields must have labels");
+      toast.error("All fields must have labels");
       return;
     }
 
@@ -165,12 +166,12 @@ export default function NewFormSchema() {
         status: "published",
       });
 
-      alert("Form schema published successfully!");
+      toast.success("Form schema published successfully!");
       navigate("/admin/form-schemas");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to publish form schema";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

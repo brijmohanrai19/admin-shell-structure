@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -39,15 +40,16 @@ export default function CampaignsList() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete ${name}?`)) {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
       return;
     }
 
     try {
       await campaignsAPI.delete(id);
-      setCampaigns((prev) => prev.filter((c) => c.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete campaign");
+      toast.success("Campaign deleted successfully");
+      loadCampaigns();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete campaign");
     }
   };
 

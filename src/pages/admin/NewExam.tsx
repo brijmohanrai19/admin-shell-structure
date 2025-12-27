@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { ExamForm } from "@/components/admin/exams/exam-form";
 import { examsAPI } from "@/services/api/exams";
 
@@ -13,12 +14,12 @@ export default function NewExam() {
       setLoading(true);
       setError(null);
       await examsAPI.create(data);
-      alert("Exam created successfully!");
+      toast.success("Exam created successfully!");
       navigate("/admin/exams");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to create exam";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

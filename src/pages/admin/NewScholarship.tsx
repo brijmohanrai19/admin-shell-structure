@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { ScholarshipForm } from "@/components/admin/scholarships/scholarship-form";
 import { scholarshipsAPI } from "@/services/api/scholarships";
 
@@ -13,12 +14,12 @@ export default function NewScholarship() {
       setLoading(true);
       setError(null);
       await scholarshipsAPI.create(data);
-      alert("Scholarship created successfully!");
+      toast.success("Scholarship created successfully!");
       navigate("/admin/scholarships");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to create scholarship";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

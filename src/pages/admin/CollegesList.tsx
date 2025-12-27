@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { CsvImportModal } from "@/components/admin/CsvImportModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Upload } from "lucide-react";
 import { collegesAPI, College } from "@/services/api/colleges";
 
 export default function CollegesList() {
@@ -19,6 +21,7 @@ export default function CollegesList() {
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     loadColleges();
@@ -36,6 +39,64 @@ export default function CollegesList() {
       setLoading(false);
     }
   };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await collegesAPI.delete(id);
+      toast.success("College deleted successfully");
+      loadColleges();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete college");
+    }
+  };
+
+  const handleBulkImport = async (data: any[]) => {
+    for (const row of data) {
+      const collegeData = {
+        name: row.name,
+        slug: row.slug,
+        city: row.city || "",
+        state: row.state || "",
+        country: row.country || "India",
+        description: row.description || "",
+        courses: row.courses ? JSON.parse(row.courses) : [],
+        status: "draft" as const,
+      };
+      await collegesAPI.create(collegeData);
+    }
+    loadColleges();
+  };
+
+  const sampleCollegesData = [
+    {
+      name: "NIT Trichy",
+      slug: "nit-trichy",
+      city: "Tiruchirappalli",
+      state: "Tamil Nadu",
+      country: "India",
+      description: "National Institute of Technology - Premier engineering institute"
+    },
+    {
+      name: "IIIT Hyderabad",
+      slug: "iiit-hyderabad",
+      city: "Hyderabad",
+      state: "Telangana",
+      country: "India",
+      description: "International Institute of Information Technology"
+    },
+    {
+      name: "Anna University",
+      slug: "anna-university",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      country: "India",
+      description: "State university offering engineering programs"
+    }
+  ];
 
   if (loading) {
     return (
@@ -65,12 +126,18 @@ export default function CollegesList() {
         title="Colleges"
         description="Manage all colleges and institutions"
         actions={
-          <Link to="/admin/colleges/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add College
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowImportModal(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
             </Button>
-          </Link>
+            <Link to="/admin/colleges/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add College
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -121,12 +188,7 @@ export default function CollegesList() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600"
-                    onClick={() => {
-                      if (confirm(`Delete ${college.name}?`)) {
-                        console.log("Delete college:", college.id);
-                        alert("Delete functionality coming soon");
-                      }
-                    }}
+                    onClick={() => handleDelete(college.id, college.name)}
                   >
                     Delete
                   </DropdownMenuItem>
@@ -136,6 +198,25 @@ export default function CollegesList() {
           }))}
         />
       </div>
+
+      {/* CSV Import Modal */}
+      <CsvImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleBulkImport}
+        expectedColumns={[
+          "name",
+          "slug",
+          "city",
+          "state",
+          "country",
+          "description",
+        ]}
+        title="Import Colleges from CSV"
+        description="Upload a CSV file with college data. Each row will be created as a new college."
+        sampleData={sampleCollegesData}
+        entityName="College"
+      />
     </div>
   );
 }

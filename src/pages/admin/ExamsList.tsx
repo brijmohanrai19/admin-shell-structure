@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { CsvImportModal } from "@/components/admin/CsvImportModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Upload } from "lucide-react";
 import { examsAPI, Exam } from "@/services/api/exams";
 
 export default function ExamsList() {
@@ -19,6 +21,7 @@ export default function ExamsList() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     loadExams();
@@ -36,6 +39,67 @@ export default function ExamsList() {
       setLoading(false);
     }
   };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await examsAPI.delete(id);
+      toast.success("Exam deleted successfully");
+      loadExams();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete exam");
+    }
+  };
+
+  const handleBulkImport = async (data: any[]) => {
+    for (const row of data) {
+      const examData = {
+        name: row.name,
+        slug: row.slug,
+        conducting_body: row.conducting_body,
+        exam_date: row.exam_date || null,
+        description: row.description || "",
+        eligibility: row.eligibility || "",
+        exam_pattern: row.exam_pattern || "",
+        status: "draft" as const,
+      };
+      await examsAPI.create(examData);
+    }
+    loadExams();
+  };
+
+  const sampleExamsData = [
+    {
+      name: "GATE 2026",
+      slug: "gate-2026",
+      conducting_body: "IIT",
+      exam_date: "2026-02-10",
+      description: "Graduate Aptitude Test in Engineering",
+      eligibility: "Bachelor's degree in Engineering/Technology",
+      exam_pattern: "Computer-based test with MCQs"
+    },
+    {
+      name: "CAT 2026",
+      slug: "cat-2026",
+      conducting_body: "IIM",
+      exam_date: "2026-11-28",
+      description: "Common Admission Test for MBA",
+      eligibility: "Bachelor's degree with 50% marks",
+      exam_pattern: "3 sections - QA VA-RC DI-LR"
+    },
+    {
+      name: "CLAT 2026",
+      slug: "clat-2026",
+      conducting_body: "CLAT Consortium",
+      exam_date: "2026-12-06",
+      description: "Common Law Admission Test",
+      eligibility: "Class 12 pass or appearing",
+      exam_pattern: "2 hour exam with 150 questions"
+    }
+  ];
 
   if (loading) {
     return (
@@ -65,12 +129,18 @@ export default function ExamsList() {
         title="Exams"
         description="Manage entrance examinations"
         actions={
-          <Link to="/admin/exams/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Exam
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowImportModal(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
             </Button>
-          </Link>
+            <Link to="/admin/exams/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Exam
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -123,12 +193,7 @@ export default function ExamsList() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600"
-                    onClick={() => {
-                      if (confirm(`Delete ${exam.name}?`)) {
-                        console.log("Delete exam:", exam.id);
-                        alert("Delete functionality coming soon");
-                      }
-                    }}
+                    onClick={() => handleDelete(exam.id, exam.name)}
                   >
                     Delete
                   </DropdownMenuItem>
@@ -138,6 +203,26 @@ export default function ExamsList() {
           }))}
         />
       </div>
+
+      {/* CSV Import Modal */}
+      <CsvImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleBulkImport}
+        expectedColumns={[
+          "name",
+          "slug",
+          "conducting_body",
+          "exam_date",
+          "description",
+          "eligibility",
+          "exam_pattern",
+        ]}
+        title="Import Exams from CSV"
+        description="Upload a CSV file with exam data. Each row will be created as a new exam."
+        sampleData={sampleExamsData}
+        entityName="Exam"
+      />
     </div>
   );
 }

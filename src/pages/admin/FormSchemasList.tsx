@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +42,20 @@ export default function FormSchemasList() {
       setError(err instanceof Error ? err.message : "Failed to load form schemas");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await formSchemasAPI.delete(id);
+      toast.success("Form schema deleted successfully");
+      loadFormSchemas();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete form schema");
     }
   };
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { ScholarshipForm } from "@/components/admin/scholarships/scholarship-form";
 import { scholarshipsAPI, Scholarship } from "@/services/api/scholarships";
 
@@ -37,12 +38,12 @@ export default function ScholarshipDetail() {
       setSaving(true);
       setError(null);
       await scholarshipsAPI.update(id, data);
-      alert("Scholarship updated successfully!");
+      toast.success("Scholarship updated successfully!");
       navigate("/admin/scholarships");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update scholarship";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

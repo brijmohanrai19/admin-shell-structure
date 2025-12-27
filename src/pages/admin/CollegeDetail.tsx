@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { CollegeForm } from "@/components/admin/colleges/college-form";
 import { collegesAPI, College } from "@/services/api/colleges";
 
@@ -37,12 +38,12 @@ export default function CollegeDetail() {
       setSaving(true);
       setError(null);
       await collegesAPI.update(id, data);
-      alert("College updated successfully!");
+      toast.success("College updated successfully!");
       navigate("/admin/colleges");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update college";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

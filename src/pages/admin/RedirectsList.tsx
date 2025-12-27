@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,20 @@ export default function RedirectsList() {
     }
   };
 
+  const handleDelete = async (id: string, sourcePath: string) => {
+    if (!confirm(`Are you sure you want to delete redirect from "${sourcePath}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await redirectsAPI.delete(id);
+      toast.success("Redirect deleted successfully");
+      loadRedirects();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete redirect");
+    }
+  };
+
   const handleToggleActive = async (id: string) => {
     try {
       const redirect = redirects.find((r) => r.id === id);
@@ -78,19 +93,6 @@ export default function RedirectsList() {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update redirect status");
-    }
-  };
-
-  const handleDelete = async (id: string, sourcePath: string) => {
-    if (!confirm(`Delete redirect from "${sourcePath}"?`)) {
-      return;
-    }
-
-    try {
-      await redirectsAPI.delete(id);
-      setRedirects((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete redirect");
     }
   };
 

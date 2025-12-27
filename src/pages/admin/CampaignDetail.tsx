@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { WizardContainer } from "@/components/admin/campaigns/campaign-builder/wizard-container";
 import { campaignsAPI, Campaign } from "@/services/api/campaigns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -56,12 +57,15 @@ export default function CampaignDetail() {
 
       const updated = await campaignsAPI.update(id!, campaignData);
       setCampaign(updated);
+      toast.success(action === "launch" ? "Campaign launched successfully!" : "Campaign updated successfully!");
 
       if (action === "launch") {
         navigate("/admin/campaigns");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update campaign");
+      const errorMessage = err instanceof Error ? err.message : "Failed to update campaign";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

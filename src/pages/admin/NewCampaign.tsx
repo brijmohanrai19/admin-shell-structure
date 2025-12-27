@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { WizardContainer } from "@/components/admin/campaigns/campaign-builder/wizard-container";
 import { campaignsAPI } from "@/services/api/campaigns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -32,9 +33,12 @@ export default function NewCampaign() {
       };
 
       await campaignsAPI.create(campaignData);
+      toast.success(action === "launch" ? "Campaign launched successfully!" : "Campaign saved as draft!");
       navigate("/admin/campaigns");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create campaign");
+      const errorMessage = err instanceof Error ? err.message : "Failed to create campaign";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,16 +72,19 @@ export default function NewTracker() {
   const handleSave = async () => {
     if (!formData.name.trim()) {
       setError("Tracker name is required");
+      toast.error("Tracker name is required");
       return;
     }
 
     if (!formData.type) {
       setError("Tracker type is required");
+      toast.error("Tracker type is required");
       return;
     }
 
     if (!formData.script_code.trim()) {
       setError("Script code is required");
+      toast.error("Script code is required");
       return;
     }
 
@@ -88,9 +92,12 @@ export default function NewTracker() {
       setLoading(true);
       setError(null);
       await trackersAPI.create(formData);
+      toast.success("Tracker created successfully!");
       navigate("/admin/trackers");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create tracker");
+      const errorMessage = err instanceof Error ? err.message : "Failed to create tracker";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +67,7 @@ export default function NewTemplate() {
 
   const handleSaveDraft = async () => {
     if (!formData.name.trim()) {
-      alert("Template name is required");
+      toast.error("Template name is required");
       return;
     }
 
@@ -87,12 +88,12 @@ export default function NewTemplate() {
         status: "draft",
       });
 
-      alert("Template saved as draft!");
+      toast.success("Template saved as draft!");
       navigate("/admin/templates");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to save template";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -100,17 +101,17 @@ export default function NewTemplate() {
 
   const handlePublish = async () => {
     if (!formData.name.trim()) {
-      alert("Template name is required");
+      toast.error("Template name is required");
       return;
     }
 
     if (!formData.component_definition.trim()) {
-      alert("Component definition is required for publishing");
+      toast.error("Component definition is required for publishing");
       return;
     }
 
     if (!isJSONValid) {
-      alert("Invalid JSON in component definition");
+      toast.error("Invalid JSON in component definition");
       return;
     }
 
@@ -135,12 +136,12 @@ export default function NewTemplate() {
         status: "published",
       });
 
-      alert("Template published successfully!");
+      toast.success("Template published successfully!");
       navigate("/admin/templates");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to publish template";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

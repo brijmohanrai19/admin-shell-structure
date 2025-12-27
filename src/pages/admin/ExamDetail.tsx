@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { ExamForm } from "@/components/admin/exams/exam-form";
 import { examsAPI, Exam } from "@/services/api/exams";
 
@@ -37,12 +38,12 @@ export default function ExamDetail() {
       setSaving(true);
       setError(null);
       await examsAPI.update(id, data);
-      alert("Exam updated successfully!");
+      toast.success("Exam updated successfully!");
       navigate("/admin/exams");
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update exam";
       setError(errorMessage);
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

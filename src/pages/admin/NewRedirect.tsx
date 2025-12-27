@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,9 +87,12 @@ export default function NewRedirect() {
       setLoading(true);
       setError(null);
       await redirectsAPI.create(formData);
+      toast.success("Redirect created successfully!");
       navigate("/admin/redirects");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create redirect");
+      const errorMessage = err instanceof Error ? err.message : "Failed to create redirect";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

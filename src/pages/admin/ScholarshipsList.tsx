@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { CsvImportModal } from "@/components/admin/CsvImportModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Upload } from "lucide-react";
 import { scholarshipsAPI, Scholarship } from "@/services/api/scholarships";
 
 export default function ScholarshipsList() {
@@ -19,6 +21,7 @@ export default function ScholarshipsList() {
   const [scholarships, setScholarships] = useState<Scholarship[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     loadScholarships();
@@ -36,6 +39,59 @@ export default function ScholarshipsList() {
       setLoading(false);
     }
   };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await scholarshipsAPI.delete(id);
+      toast.success("Scholarship deleted successfully");
+      loadScholarships();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete scholarship");
+    }
+  };
+
+  const handleBulkImport = async (data: any[]) => {
+    for (const row of data) {
+      const scholarshipData = {
+        name: row.name,
+        slug: row.slug,
+        provider_name: row.provider_name || "",
+        eligibility_criteria: row.eligibility_criteria || "",
+        amount_min: row.amount_min ? parseInt(row.amount_min) : null,
+        amount_max: row.amount_max ? parseInt(row.amount_max) : null,
+        currency: row.currency || "INR",
+        deadline: row.deadline || null,
+        status: "draft" as const,
+      };
+      await scholarshipsAPI.create(scholarshipData);
+    }
+    loadScholarships();
+  };
+
+  const sampleScholarshipsData = [
+    {
+      name: "Post Matric Scholarship",
+      slug: "post-matric-2026",
+      provider_name: "Ministry of Social Justice",
+      eligibility_criteria: "Students from SC/ST/OBC categories"
+    },
+    {
+      name: "Kishore Vaigyanik Protsahan Yojana",
+      slug: "kvpy-2026",
+      provider_name: "Indian Institute of Science",
+      eligibility_criteria: "Students pursuing basic sciences"
+    },
+    {
+      name: "National Merit Scholarship",
+      slug: "nms-2026",
+      provider_name: "Department of Education",
+      eligibility_criteria: "Class 10 students with 60%+ marks"
+    }
+  ];
 
   const formatAmount = (scholarship: Scholarship) => {
     if (!scholarship.amount_min && !scholarship.amount_max) return "N/A";
@@ -79,12 +135,18 @@ export default function ScholarshipsList() {
         title="Scholarships"
         description="Manage scholarships and financial aid programs"
         actions={
-          <Link to="/admin/scholarships/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Scholarship
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowImportModal(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import CSV
             </Button>
-          </Link>
+            <Link to="/admin/scholarships/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Scholarship
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -135,12 +197,7 @@ export default function ScholarshipsList() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600"
-                    onClick={() => {
-                      if (confirm(`Delete ${scholarship.name}?`)) {
-                        console.log("Delete scholarship:", scholarship.id);
-                        alert("Delete functionality coming soon");
-                      }
-                    }}
+                    onClick={() => handleDelete(scholarship.id, scholarship.name)}
                   >
                     Delete
                   </DropdownMenuItem>
@@ -150,6 +207,23 @@ export default function ScholarshipsList() {
           }))}
         />
       </div>
+
+      {/* CSV Import Modal */}
+      <CsvImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleBulkImport}
+        expectedColumns={[
+          "name",
+          "slug",
+          "provider_name",
+          "eligibility_criteria",
+        ]}
+        title="Import Scholarships from CSV"
+        description="Upload a CSV file with scholarship data. Each row will be created as a new scholarship."
+        sampleData={sampleScholarshipsData}
+        entityName="Scholarship"
+      />
     </div>
   );
 }
