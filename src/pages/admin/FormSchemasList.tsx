@@ -1,19 +1,11 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Edit, Eye, GitBranch } from "lucide-react";
-
-const mockFormSchemas = [
-  { id: "1", name: "Engineering Admission Form", version: 3, is_latest: true, status: "published", field_count: 12, used_by_count: 15, created_at: "2024-01-15" },
-  { id: "2", name: "Engineering Admission Form", version: 2, is_latest: false, status: "retired", field_count: 10, used_by_count: 8, created_at: "2023-12-01" },
-  { id: "3", name: "Engineering Admission Form", version: 1, is_latest: false, status: "retired", field_count: 8, used_by_count: 3, created_at: "2023-10-10" },
-  { id: "4", name: "Scholarship Application Form", version: 2, is_latest: true, status: "published", field_count: 18, used_by_count: 10, created_at: "2024-02-20" },
-  { id: "5", name: "Scholarship Application Form", version: 1, is_latest: false, status: "retired", field_count: 15, used_by_count: 5, created_at: "2024-01-05" },
-  { id: "6", name: "General Inquiry Form", version: 1, is_latest: true, status: "draft", field_count: 6, used_by_count: 0, created_at: "2024-03-01" },
-  { id: "7", name: "College Application Form", version: 1, is_latest: true, status: "published", field_count: 20, used_by_count: 22, created_at: "2024-01-10" },
-];
+import { formSchemasAPI, FormSchema } from "@/services/api/form-schemas";
 
 type StatusType = "published" | "retired" | "draft";
 
@@ -31,14 +23,57 @@ const getStatusColor = (status: StatusType) => {
 };
 
 export default function FormSchemasList() {
-  // Group form schemas by name
-  const groupedSchemas = mockFormSchemas.reduce((acc, schema) => {
-    if (!acc[schema.name]) {
-      acc[schema.name] = [];
+  const [formSchemas, setFormSchemas] = useState<FormSchema[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadFormSchemas();
+  }, []);
+
+  const loadFormSchemas = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await formSchemasAPI.list();
+      setFormSchemas(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load form schemas");
+    } finally {
+      setLoading(false);
     }
-    acc[schema.name].push(schema);
+  };
+
+  // Group form schemas by slug
+  const groupedSchemas = formSchemas.reduce((acc, schema) => {
+    if (!acc[schema.slug]) {
+      acc[schema.slug] = [];
+    }
+    acc[schema.slug].push(schema);
     return acc;
-  }, {} as Record<string, typeof mockFormSchemas>);
+  }, {} as Record<string, FormSchema[]>);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading form schemas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={loadFormSchemas}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -56,80 +91,83 @@ export default function FormSchemasList() {
       />
 
       <div className="p-8 space-y-6">
-        {Object.entries(groupedSchemas).map(([schemaName, versions]) => (
-          <Card key={schemaName}>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{schemaName}</span>
-                <Badge variant="outline">{versions.length} versions</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {versions
-                  .sort((a, b) => b.version - a.version)
-                  .map((schema) => (
-                    <div
-                      key={schema.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4 flex-1">
+        {Object.entries(groupedSchemas).map(([schemaSlug, versions]) => {
+          const latestVersion = Math.max(...versions.map(v => v.version));
+          return (
+            <Card key={schemaSlug}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>{versions[0].name}</span>
+                  <Badge variant="outline">{versions.length} versions</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {versions
+                    .sort((a, b) => b.version - a.version)
+                    .map((schema) => (
+                      <div
+                        key={schema.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">v{schema.version}</Badge>
+                            {schema.version === latestVersion && (
+                              <Badge className="bg-blue-500 text-white">
+                                Latest
+                              </Badge>
+                            )}
+                          </div>
+
+                          <Badge className={getStatusColor(schema.status)}>
+                            {schema.status}
+                          </Badge>
+
+                          <div className="text-sm text-muted-foreground">
+                            {schema.fields.length} fields
+                          </div>
+
+                          <div className="text-sm text-muted-foreground">
+                            Used by {schema.usage_count} campaigns
+                          </div>
+
+                          <div className="text-sm text-muted-foreground">
+                            Created {new Date(schema.created_at).toLocaleDateString()}
+                          </div>
+                        </div>
+
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">v{schema.version}</Badge>
-                          {schema.is_latest && (
-                            <Badge className="bg-blue-500 text-white">
-                              Latest
-                            </Badge>
-                          )}
-                        </div>
-
-                        <Badge className={getStatusColor(schema.status)}>
-                          {schema.status}
-                        </Badge>
-
-                        <div className="text-sm text-muted-foreground">
-                          {schema.field_count} fields
-                        </div>
-
-                        <div className="text-sm text-muted-foreground">
-                          Used by {schema.used_by_count} campaigns
-                        </div>
-
-                        <div className="text-sm text-muted-foreground">
-                          Created {new Date(schema.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Link to={`/admin/form-schemas/${schema.id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </Link>
-
-                        {schema.status === "draft" && (
-                          <Link to={`/admin/form-schemas/${schema.id}/edit`}>
+                          <Link to={`/admin/form-schemas/${schema.id}`}>
                             <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
                             </Button>
                           </Link>
-                        )}
 
-                        {schema.is_latest && (
-                          <Button variant="outline" size="sm">
-                            <GitBranch className="h-4 w-4 mr-1" />
-                            New Version
-                          </Button>
-                        )}
+                          {schema.status === "draft" && (
+                            <Link to={`/admin/form-schemas/${schema.id}`}>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                            </Link>
+                          )}
+
+                          {schema.version === latestVersion && (
+                            <Button variant="outline" size="sm">
+                              <GitBranch className="h-4 w-4 mr-1" />
+                              New Version
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

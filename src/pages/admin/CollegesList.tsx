@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
@@ -11,17 +12,52 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
-
-const placeholderColleges = [
-  { id: "1", name: "IIT Delhi", location: "New Delhi", type: "Government", status: "live" as const },
-  { id: "2", name: "IIT Bombay", location: "Mumbai", type: "Government", status: "live" as const },
-  { id: "3", name: "BITS Pilani", location: "Pilani", type: "Private", status: "live" as const },
-  { id: "4", name: "NIT Trichy", location: "Tiruchirappalli", type: "Government", status: "draft" as const },
-  { id: "5", name: "VIT Vellore", location: "Vellore", type: "Private", status: "draft" as const },
-];
+import { collegesAPI, College } from "@/services/api/colleges";
 
 export default function CollegesList() {
   const navigate = useNavigate();
+  const [colleges, setColleges] = useState<College[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadColleges();
+  }, []);
+
+  const loadColleges = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await collegesAPI.list();
+      setColleges(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load colleges");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading colleges...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={loadColleges}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -60,10 +96,17 @@ export default function CollegesList() {
             { key: "status", label: "Status" },
             { key: "actions", label: "", className: "text-right" },
           ]}
-          rows={placeholderColleges.map((college) => ({
-            name: <span className="font-medium">{college.name}</span>,
-            location: college.location,
-            type: college.type,
+          rows={colleges.map((college) => ({
+            name: (
+              <Link
+                to={`/admin/colleges/${college.id}`}
+                className="font-medium hover:underline"
+              >
+                {college.name}
+              </Link>
+            ),
+            location: `${college.city}, ${college.state}`,
+            type: college.approvals.includes("AICTE") ? "Engineering" : "General",
             status: <StatusBadge status={college.status} />,
             actions: (
               <DropdownMenu>

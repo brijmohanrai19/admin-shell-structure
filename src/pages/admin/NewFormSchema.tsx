@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Info, AlertTriangle, Save, Rocket, Plus, X, GripVertical } from "lucide-react";
+import { formSchemasAPI } from "@/services/api/form-schemas";
 
 interface FormField {
   id: string;
@@ -43,6 +44,8 @@ const fieldTypes = [
 
 export default function NewFormSchema() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormSchemaData>({
     name: "",
     description: "",
@@ -78,22 +81,46 @@ export default function NewFormSchema() {
     );
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!formData.name.trim()) {
       alert("Schema name is required");
       return;
     }
 
-    console.log("Saving form schema as draft:", {
-      ...formData,
-      version: 1,
-      status: "draft",
-    });
-    alert("Form schema saved as draft! (mock)");
-    navigate("/admin/form-schemas");
+    try {
+      setLoading(true);
+      setError(null);
+
+      const slug = formData.name.toLowerCase().replace(/\s+/g, "-");
+
+      // Convert frontend field format to API format
+      const apiFields = formData.fields.map(f => ({
+        id: f.id,
+        type: f.field_type,
+        label: f.label,
+        required: f.required,
+        options: f.options,
+      }));
+
+      await formSchemasAPI.create({
+        name: formData.name,
+        slug,
+        fields: apiFields,
+        status: "draft",
+      });
+
+      alert("Form schema saved as draft!");
+      navigate("/admin/form-schemas");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save form schema";
+      setError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!formData.name.trim()) {
       alert("Schema name is required");
       return;
@@ -116,13 +143,37 @@ export default function NewFormSchema() {
 
     if (!confirmed) return;
 
-    console.log("Publishing form schema:", {
-      ...formData,
-      version: 1,
-      status: "published",
-    });
-    alert("Form schema published successfully! (mock)");
-    navigate("/admin/form-schemas");
+    try {
+      setLoading(true);
+      setError(null);
+
+      const slug = formData.name.toLowerCase().replace(/\s+/g, "-");
+
+      // Convert frontend field format to API format
+      const apiFields = formData.fields.map(f => ({
+        id: f.id,
+        type: f.field_type,
+        label: f.label,
+        required: f.required,
+        options: f.options,
+      }));
+
+      await formSchemasAPI.create({
+        name: formData.name,
+        slug,
+        fields: apiFields,
+        status: "published",
+      });
+
+      alert("Form schema published successfully!");
+      navigate("/admin/form-schemas");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to publish form schema";
+      setError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -137,6 +188,13 @@ export default function NewFormSchema() {
       />
 
       <div className="p-8 space-y-6">
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Warning Alert */}
         <Alert>
           <AlertTriangle className="h-4 w-4" />
@@ -372,11 +430,11 @@ export default function NewFormSchema() {
               </Button>
 
               <div className="flex items-center gap-3">
-                <Button variant="secondary" onClick={handleSaveDraft}>
+                <Button variant="secondary" onClick={handleSaveDraft} disabled={loading}>
                   <Save className="mr-2 h-4 w-4" />
                   Save as Draft
                 </Button>
-                <Button onClick={handlePublish}>
+                <Button onClick={handlePublish} disabled={loading}>
                   <Rocket className="mr-2 h-4 w-4" />
                   Publish Schema
                 </Button>

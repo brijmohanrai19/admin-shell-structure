@@ -5,6 +5,14 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const examsRoutes = require('./routes/exams');
+const collegesRoutes = require('./routes/colleges');
+const scholarshipsRoutes = require('./routes/scholarships');
+const templatesRoutes = require('./routes/templates');
+const formSchemasRoutes = require('./routes/form-schemas');
+const trackersRoutes = require('./routes/trackers');
+const redirectsRoutes = require('./routes/redirects');
+const campaignsRoutes = require('./routes/campaigns');
+const seoRoutes = require('./routes/seo');
 
 async function start() {
   try {
@@ -25,6 +33,14 @@ await fastify.register(cors, {
     // Routes
     await fastify.register(authRoutes, { prefix: '/api/auth' });
     await fastify.register(examsRoutes, { prefix: '/api/admin/exams' });
+    await fastify.register(collegesRoutes, { prefix: '/api/admin/colleges' });
+    await fastify.register(scholarshipsRoutes, { prefix: '/api/admin/scholarships' });
+    await fastify.register(templatesRoutes, { prefix: '/api/admin/templates' });
+    await fastify.register(formSchemasRoutes, { prefix: '/api/admin/form-schemas' });
+    await fastify.register(trackersRoutes, { prefix: '/api/admin/trackers' });
+    await fastify.register(redirectsRoutes, { prefix: '/api/admin/redirects' });
+    await fastify.register(campaignsRoutes, { prefix: '/api/admin/campaigns' });
+    await fastify.register(seoRoutes, { prefix: '/api/admin/seo' });
 
     // Health check
     fastify.get('/health', async (request, reply) => {
@@ -43,6 +59,14 @@ await fastify.register(cors, {
 ║   Health: /health                      ║
 ║   Auth: /api/auth/*                    ║
 ║   Exams: /api/admin/exams              ║
+║   Colleges: /api/admin/colleges        ║
+║   Scholarships: /api/admin/scholarships║
+║   Templates: /api/admin/templates      ║
+║   Form Schemas: /api/admin/form-schemas║
+║   Trackers: /api/admin/trackers        ║
+║   Redirects: /api/admin/redirects      ║
+║   Campaigns: /api/admin/campaigns      ║
+║   SEO: /api/admin/seo                  ║
 ╚════════════════════════════════════════╝
     `);
   } catch (error) {

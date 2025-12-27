@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
@@ -11,17 +12,66 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Search, Filter, MoreHorizontal } from "lucide-react";
-
-const placeholderScholarships = [
-  { id: "1", name: "Merit Scholarship 2025", provider: "Government", amount: "₹50,000", status: "live" as const },
-  { id: "2", name: "Sports Excellence Award", provider: "MHRD", amount: "₹75,000", status: "live" as const },
-  { id: "3", name: "Women in STEM Grant", provider: "DST", amount: "₹1,00,000", status: "draft" as const },
-  { id: "4", name: "SC/ST Scholarship", provider: "Ministry of Social Justice", amount: "₹60,000", status: "live" as const },
-  { id: "5", name: "Innovation Fellowship", provider: "Private Foundation", amount: "₹2,00,000", status: "draft" as const },
-];
+import { scholarshipsAPI, Scholarship } from "@/services/api/scholarships";
 
 export default function ScholarshipsList() {
   const navigate = useNavigate();
+  const [scholarships, setScholarships] = useState<Scholarship[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadScholarships();
+  }, []);
+
+  const loadScholarships = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await scholarshipsAPI.list();
+      setScholarships(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load scholarships");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatAmount = (scholarship: Scholarship) => {
+    if (!scholarship.amount_min && !scholarship.amount_max) return "N/A";
+    if (scholarship.amount_min === scholarship.amount_max) {
+      return `${scholarship.currency} ${scholarship.amount_min?.toLocaleString()}`;
+    }
+    if (scholarship.amount_min && scholarship.amount_max) {
+      return `${scholarship.currency} ${scholarship.amount_min.toLocaleString()} - ${scholarship.amount_max.toLocaleString()}`;
+    }
+    if (scholarship.amount_min) {
+      return `${scholarship.currency} ${scholarship.amount_min.toLocaleString()}+`;
+    }
+    return `Up to ${scholarship.currency} ${scholarship.amount_max?.toLocaleString()}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading scholarships...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={loadScholarships}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -60,10 +110,17 @@ export default function ScholarshipsList() {
             { key: "status", label: "Status" },
             { key: "actions", label: "", className: "text-right" },
           ]}
-          rows={placeholderScholarships.map((scholarship) => ({
-            name: <span className="font-medium">{scholarship.name}</span>,
-            provider: scholarship.provider,
-            amount: scholarship.amount,
+          rows={scholarships.map((scholarship) => ({
+            name: (
+              <Link
+                to={`/admin/scholarships/${scholarship.id}`}
+                className="font-medium hover:underline"
+              >
+                {scholarship.name}
+              </Link>
+            ),
+            provider: scholarship.provider_name,
+            amount: formatAmount(scholarship),
             status: <StatusBadge status={scholarship.status} />,
             actions: (
               <DropdownMenu>

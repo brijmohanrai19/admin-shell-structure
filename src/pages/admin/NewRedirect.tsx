@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Info, Save, ArrowLeft } from "lucide-react";
+import { redirectsAPI } from "@/services/api/redirects";
 
 interface RedirectFormData {
   source_path: string;
@@ -34,6 +35,8 @@ export default function NewRedirect() {
     notes: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const updateField = <K extends keyof RedirectFormData>(
     field: K,
@@ -74,14 +77,21 @@ export default function NewRedirect() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
-    console.log("Creating redirect:", formData);
-    alert("Redirect created successfully! (mock)");
-    navigate("/admin/redirects");
+    try {
+      setLoading(true);
+      setError(null);
+      await redirectsAPI.create(formData);
+      navigate("/admin/redirects");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create redirect");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -109,6 +119,13 @@ export default function NewRedirect() {
             Redirects help maintain SEO value when moving or renaming pages. Use 301 for permanent changes and 302 for temporary redirects.
           </AlertDescription>
         </Alert>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Form */}
         <Card>
@@ -233,13 +250,13 @@ export default function NewRedirect() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <Button variant="outline" onClick={handleCancel}>
+              <Button variant="outline" onClick={handleCancel} disabled={loading}>
                 Cancel
               </Button>
 
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} disabled={loading}>
                 <Save className="mr-2 h-4 w-4" />
-                Save Redirect
+                {loading ? "Saving..." : "Save Redirect"}
               </Button>
             </div>
           </CardContent>

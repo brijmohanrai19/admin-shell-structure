@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
@@ -13,91 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Info, ExternalLink, Copy, CheckCircle2 } from "lucide-react";
-
-interface SlugRecord {
-  id: string;
-  full_path: string;
-  entity_type: "exam" | "college" | "scholarship" | "campaign";
-  entity_id: string;
-  entity_name: string;
-  status: "draft" | "active" | "retired";
-  created_at: string;
-  registered_by: string;
-}
-
-const mockSlugRegistry: SlugRecord[] = [
-  {
-    id: "1",
-    full_path: "/exam/viteee-2026",
-    entity_type: "exam",
-    entity_id: "1",
-    entity_name: "VITEEE 2026",
-    status: "active",
-    created_at: "2024-01-15",
-    registered_by: "admin@example.com",
-  },
-  {
-    id: "2",
-    full_path: "/college/vit-vellore",
-    entity_type: "college",
-    entity_id: "1",
-    entity_name: "VIT Vellore",
-    status: "active",
-    created_at: "2024-01-20",
-    registered_by: "admin@example.com",
-  },
-  {
-    id: "3",
-    full_path: "/ad/viteee-admissions",
-    entity_type: "campaign",
-    entity_id: "1",
-    entity_name: "VITEEE Ad Campaign",
-    status: "active",
-    created_at: "2024-02-01",
-    registered_by: "admin@example.com",
-  },
-  {
-    id: "4",
-    full_path: "/exam/jee-main-2025",
-    entity_type: "exam",
-    entity_id: "2",
-    entity_name: "JEE Main 2025",
-    status: "retired",
-    created_at: "2023-06-10",
-    registered_by: "admin@example.com",
-  },
-  {
-    id: "5",
-    full_path: "/scholarship/merit-scholarship",
-    entity_type: "scholarship",
-    entity_id: "1",
-    entity_name: "National Merit Scholarship 2026",
-    status: "active",
-    created_at: "2024-03-05",
-    registered_by: "admin@example.com",
-  },
-  {
-    id: "6",
-    full_path: "/lp/engineering-admission",
-    entity_type: "campaign",
-    entity_id: "2",
-    entity_name: "Engineering Admission LP",
-    status: "draft",
-    created_at: "2024-12-20",
-    registered_by: "admin@example.com",
-  },
-  {
-    id: "7",
-    full_path: "/exam/neet-ug-2024",
-    entity_type: "exam",
-    entity_id: "3",
-    entity_name: "NEET UG 2024",
-    status: "retired",
-    created_at: "2023-03-15",
-    registered_by: "admin@example.com",
-  },
-];
+import { Search, Info, ExternalLink, Copy, CheckCircle2, Loader2 } from "lucide-react";
+import { slugRegistryAPI, SlugRecord } from "@/services/api/slug-registry";
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -130,13 +47,13 @@ const getEntityTypeColor = (entityType: string) => {
 const getEntityEditPath = (entityType: string, entityId: string) => {
   switch (entityType) {
     case "exam":
-      return `/admin/exams/${entityId}/edit`;
+      return `/admin/exams/${entityId}`;
     case "college":
-      return `/admin/colleges/${entityId}/edit`;
+      return `/admin/colleges/${entityId}`;
     case "scholarship":
-      return `/admin/scholarships/${entityId}/edit`;
+      return `/admin/scholarships/${entityId}`;
     case "campaign":
-      return `/admin/campaigns/${entityId}/edit`;
+      return `/admin/campaigns/${entityId}`;
     default:
       return "#";
   }
@@ -147,6 +64,26 @@ export default function SlugRegistry() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [entityTypeFilter, setEntityTypeFilter] = useState("all");
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [slugs, setSlugs] = useState<SlugRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSlugs();
+  }, []);
+
+  const loadSlugs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await slugRegistryAPI.list();
+      setSlugs(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load slug registry");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopySlug = (slug: string) => {
     navigator.clipboard.writeText(slug);
@@ -155,11 +92,11 @@ export default function SlugRegistry() {
   };
 
   const handleCheckAvailability = (slug: string) => {
-    const exists = mockSlugRegistry.some(s => s.full_path === slug);
+    const exists = slugs.some(s => s.full_path === slug);
     alert(exists ? `Slug "${slug}" is already registered!` : `Slug "${slug}" is available!`);
   };
 
-  const filteredSlugs = mockSlugRegistry.filter((slug) => {
+  const filteredSlugs = slugs.filter((slug) => {
     const matchesSearch =
       slug.full_path.toLowerCase().includes(searchQuery.toLowerCase()) ||
       slug.entity_name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -176,15 +113,34 @@ export default function SlugRegistry() {
       />
 
       <div className="p-8 space-y-6">
-        {/* Info Alert */}
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Note:</strong> Retired slugs are permanently reserved and cannot be reused. This prevents broken links and maintains SEO value.
-          </AlertDescription>
-        </Alert>
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
 
-        {/* Filters */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button onClick={loadSlugs} variant="outline" size="sm">
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!loading && !error && (
+          <>
+            {/* Info Alert */}
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Note:</strong> Retired slugs are permanently reserved and cannot be reused. This prevents broken links and maintains SEO value.
+              </AlertDescription>
+            </Alert>
+
+            {/* Filters */}
         <div className="flex items-center gap-4 flex-wrap">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -299,6 +255,8 @@ export default function SlugRegistry() {
               ),
             }))}
           />
+        )}
+          </>
         )}
       </div>
     </div>

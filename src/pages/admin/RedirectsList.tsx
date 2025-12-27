@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
@@ -19,71 +19,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Search, Info, Trash2, ExternalLink, ChevronDown } from "lucide-react";
-
-interface Redirect {
-  id: string;
-  source_path: string;
-  target_path: string;
-  redirect_type: "301" | "302";
-  is_active: boolean;
-  hit_count: number;
-  created_at: string;
-  notes: string;
-}
-
-const mockRedirects: Redirect[] = [
-  {
-    id: "1",
-    source_path: "/old-exam/viteee-2025",
-    target_path: "/exam/viteee-2026",
-    redirect_type: "301",
-    is_active: true,
-    hit_count: 1234,
-    created_at: "2024-01-10",
-    notes: "Exam year changed from 2025 to 2026",
-  },
-  {
-    id: "2",
-    source_path: "/admissions/iit",
-    target_path: "/college/iit-delhi",
-    redirect_type: "301",
-    is_active: true,
-    hit_count: 856,
-    created_at: "2024-02-15",
-    notes: "Consolidated IIT pages",
-  },
-  {
-    id: "3",
-    source_path: "/temp-scholarship",
-    target_path: "/scholarship/merit-scholarship",
-    redirect_type: "302",
-    is_active: true,
-    hit_count: 423,
-    created_at: "2024-03-20",
-    notes: "Temporary redirect during testing",
-  },
-  {
-    id: "4",
-    source_path: "/promo/summer-2024",
-    target_path: "/exam/jee-main-2024",
-    redirect_type: "302",
-    is_active: false,
-    hit_count: 2341,
-    created_at: "2024-04-01",
-    notes: "Summer promo campaign - ended",
-  },
-  {
-    id: "5",
-    source_path: "/apply",
-    target_path: "/exam/viteee-2026",
-    redirect_type: "302",
-    is_active: true,
-    hit_count: 5678,
-    created_at: "2024-05-10",
-    notes: "Short link for marketing",
-  },
-];
+import { Plus, Search, Info, Trash2, ExternalLink, ChevronDown, Loader2 } from "lucide-react";
+import { redirectsAPI, Redirect } from "@/services/api/redirects";
 
 const formatHitCount = (count: number): string => {
   if (count >= 1000000) {
@@ -104,25 +41,56 @@ export default function RedirectsList() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [redirects, setRedirects] = useState(mockRedirects);
+  const [redirects, setRedirects] = useState<Redirect[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleToggleActive = (id: string) => {
-    setRedirects((prev) =>
-      prev.map((redirect) =>
-        redirect.id === id
-          ? { ...redirect, is_active: !redirect.is_active }
-          : redirect
-      )
-    );
-    console.log("Toggled redirect active status:", id);
-    alert("Redirect status updated");
+  useEffect(() => {
+    loadRedirects();
+  }, []);
+
+  const loadRedirects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await redirectsAPI.list();
+      setRedirects(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load redirects");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string, sourcePath: string) => {
-    if (confirm(`Delete redirect from "${sourcePath}"?`)) {
+  const handleToggleActive = async (id: string) => {
+    try {
+      const redirect = redirects.find((r) => r.id === id);
+      if (!redirect) return;
+
+      await redirectsAPI.update(id, { is_active: !redirect.is_active });
+
+      setRedirects((prev) =>
+        prev.map((redirect) =>
+          redirect.id === id
+            ? { ...redirect, is_active: !redirect.is_active }
+            : redirect
+        )
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update redirect status");
+    }
+  };
+
+  const handleDelete = async (id: string, sourcePath: string) => {
+    if (!confirm(`Delete redirect from "${sourcePath}"?`)) {
+      return;
+    }
+
+    try {
+      await redirectsAPI.delete(id);
       setRedirects((prev) => prev.filter((r) => r.id !== id));
-      console.log("Deleted redirect:", id);
-      alert("Redirect deleted successfully");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete redirect");
     }
   };
 
@@ -159,7 +127,26 @@ export default function RedirectsList() {
       />
 
       <div className="p-8 space-y-6">
-        {/* Info Section (Collapsible) */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button onClick={loadRedirects} variant="outline" size="sm">
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!loading && !error && (
+          <>
+            {/* Info Section (Collapsible) */}
         <Collapsible>
           <CollapsibleTrigger asChild>
             <Button variant="outline" className="w-full justify-between">
@@ -306,6 +293,8 @@ export default function RedirectsList() {
               ),
             }))}
           />
+        )}
+          </>
         )}
       </div>
     </div>

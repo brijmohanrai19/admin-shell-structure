@@ -1,63 +1,12 @@
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Search, Eye, Info } from "lucide-react";
-
-const mockSeoRecords = [
-  {
-    id: "1",
-    source_type: "campaign",
-    source_name: "VITEEE 2026 Admissions",
-    url_slug: "/viteee-2026",
-    title: "VITEEE 2026 - Apply for VIT Engineering Entrance Exam",
-    description: "Apply for VITEEE 2026 Engineering Entrance Exam. Get admission to VIT's top B.Tech programs. Register now!",
-    indexed: true,
-    last_crawled: "2024-03-15",
-  },
-  {
-    id: "2",
-    source_type: "exam",
-    source_name: "JEE Main",
-    url_slug: "/exams/jee-main",
-    title: "JEE Main 2026 - Engineering Entrance Exam",
-    description: "Complete guide to JEE Main 2026. Exam dates, syllabus, pattern, and preparation tips.",
-    indexed: true,
-    last_crawled: "2024-03-14",
-  },
-  {
-    id: "3",
-    source_type: "college",
-    source_name: "VIT Chennai",
-    url_slug: "/colleges/vit-chennai",
-    title: "VIT Chennai - Vellore Institute of Technology",
-    description: "VIT Chennai Campus - Top engineering college in India. Admissions, courses, placements.",
-    indexed: true,
-    last_crawled: "2024-03-13",
-  },
-  {
-    id: "4",
-    source_type: "scholarship",
-    source_name: "Merit Scholarship 2024",
-    url_slug: "/scholarships/merit-2024",
-    title: "Merit Scholarship 2024 - Apply for Financial Aid",
-    description: "Merit-based scholarship for engineering students. Up to 100% tuition fee waiver. Apply now!",
-    indexed: false,
-    last_crawled: null,
-  },
-  {
-    id: "5",
-    source_type: "campaign",
-    source_name: "KIITEE 2026 Applications",
-    url_slug: "/kiitee-2026",
-    title: "KIITEE 2026 - KIIT Engineering Entrance Exam",
-    description: "Apply for KIITEE 2026. Engineering admission to KIIT University. Online application open.",
-    indexed: true,
-    last_crawled: "2024-03-12",
-  },
-];
+import { Search, Eye, Info, Loader2 } from "lucide-react";
+import { seoAPI, SeoEntry } from "@/services/api/seo";
 
 const getSourceColor = (sourceType: string) => {
   switch (sourceType) {
@@ -75,8 +24,55 @@ const getSourceColor = (sourceType: string) => {
 };
 
 export default function SeoList() {
-  const indexedCount = mockSeoRecords.filter((r) => r.indexed).length;
-  const notIndexedCount = mockSeoRecords.length - indexedCount;
+  const [seoRecords, setSeoRecords] = useState<SeoEntry[]>([]);
+  const [filteredRecords, setFilteredRecords] = useState<SeoEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    loadSeoRecords();
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = seoRecords.filter(
+        (record) =>
+          record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          record.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          record.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          record.keywords.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredRecords(filtered);
+    } else {
+      setFilteredRecords(seoRecords);
+    }
+  }, [searchQuery, seoRecords]);
+
+  const loadSeoRecords = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await seoAPI.list();
+      setSeoRecords(data);
+      setFilteredRecords(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load SEO records");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const indexedCount = filteredRecords.filter((r) => r.index_status === "indexed").length;
+  const notIndexedCount = filteredRecords.length - indexedCount;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -86,6 +82,18 @@ export default function SeoList() {
       />
 
       <div className="p-8 space-y-6">
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <button onClick={loadSeoRecords} className="underline">
+                Retry
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Info Alert */}
         <Alert>
           <Info className="h-4 w-4" />
@@ -104,7 +112,7 @@ export default function SeoList() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockSeoRecords.length}</div>
+              <div className="text-2xl font-bold">{filteredRecords.length}</div>
               <p className="text-xs text-muted-foreground">All published pages</p>
             </CardContent>
           </Card>
@@ -138,75 +146,83 @@ export default function SeoList() {
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Search SEO records..." className="pl-10" />
+            <Input
+              placeholder="Search SEO records..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
         {/* SEO Records List */}
         <Card>
           <CardHeader>
-            <CardTitle>SEO Records</CardTitle>
+            <CardTitle>SEO Records ({filteredRecords.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {mockSeoRecords.map((record) => (
-                <div
-                  key={record.id}
-                  className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge className={`${getSourceColor(record.source_type)} capitalize`}>
-                        {record.source_type}
-                      </Badge>
-                      <span className="font-medium">{record.source_name}</span>
-                      {record.indexed ? (
-                        <Badge variant="outline" className="text-green-600 border-green-600">
-                          Indexed
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-orange-600 border-orange-600">
-                          Not Indexed
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
+            {filteredRecords.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchQuery ? "No SEO records match your search" : "No SEO records found"}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredRecords.map((record) => (
+                  <div
+                    key={record.id}
+                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">URL:</span>
-                        <code className="text-xs bg-muted px-2 py-0.5 rounded">{record.url_slug}</code>
+                        <Badge className={`${getSourceColor(record.source_type)} capitalize`}>
+                          {record.source_type}
+                        </Badge>
+                        {record.index_status === "indexed" ? (
+                          <Badge variant="outline" className="text-green-600 border-green-600">
+                            Indexed
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-600 border-orange-600">
+                            Not Indexed
+                          </Badge>
+                        )}
                       </div>
 
-                      <div className="flex items-start gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">Title:</span>
-                        <p className="text-sm">{record.title}</p>
-                      </div>
-
-                      <div className="flex items-start gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">Description:</span>
-                        <p className="text-sm text-muted-foreground">{record.description}</p>
-                      </div>
-
-                      {record.last_crawled && (
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Last Crawled:</span>
-                          <span className="text-xs">
-                            {new Date(record.last_crawled).toLocaleDateString()}
-                          </span>
+                          <span className="text-xs text-muted-foreground">URL:</span>
+                          <code className="text-xs bg-muted px-2 py-0.5 rounded">{record.url}</code>
                         </div>
-                      )}
+
+                        <div className="flex items-start gap-2">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">Title:</span>
+                          <p className="text-sm">{record.title}</p>
+                        </div>
+
+                        <div className="flex items-start gap-2">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">Description:</span>
+                          <p className="text-sm text-muted-foreground">{record.description}</p>
+                        </div>
+
+                        {record.keywords && (
+                          <div className="flex items-start gap-2">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">Keywords:</span>
+                            <p className="text-xs text-muted-foreground">{record.keywords}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Page
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Page
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

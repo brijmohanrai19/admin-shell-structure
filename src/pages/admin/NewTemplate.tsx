@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Info, AlertTriangle, Save, Rocket } from "lucide-react";
+import { templatesAPI } from "@/services/api/templates";
 
 interface TemplateFormData {
   name: string;
@@ -38,6 +39,8 @@ const exampleJSON = `{
 
 export default function NewTemplate() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<TemplateFormData>({
     name: "",
     description: "",
@@ -61,22 +64,41 @@ export default function NewTemplate() {
   const isJSONValid =
     !formData.component_definition.trim() || parsedJSON !== null;
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!formData.name.trim()) {
       alert("Template name is required");
       return;
     }
 
-    console.log("Saving template as draft:", {
-      ...formData,
-      version: 1,
-      status: "draft",
-    });
-    alert("Template saved as draft! (mock)");
-    navigate("/admin/templates");
+    try {
+      setLoading(true);
+      setError(null);
+
+      const slug = formData.name.toLowerCase().replace(/\s+/g, "-");
+      const component_definition = formData.component_definition.trim()
+        ? JSON.parse(formData.component_definition)
+        : {};
+
+      await templatesAPI.create({
+        name: formData.name,
+        slug,
+        component_definition,
+        sections: component_definition.sections?.map((s: any) => s.type) || [],
+        status: "draft",
+      });
+
+      alert("Template saved as draft!");
+      navigate("/admin/templates");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to save template";
+      setError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!formData.name.trim()) {
       alert("Template name is required");
       return;
@@ -98,13 +120,30 @@ export default function NewTemplate() {
 
     if (!confirmed) return;
 
-    console.log("Publishing template:", {
-      ...formData,
-      version: 1,
-      status: "published",
-    });
-    alert("Template published successfully! (mock)");
-    navigate("/admin/templates");
+    try {
+      setLoading(true);
+      setError(null);
+
+      const slug = formData.name.toLowerCase().replace(/\s+/g, "-");
+      const component_definition = JSON.parse(formData.component_definition);
+
+      await templatesAPI.create({
+        name: formData.name,
+        slug,
+        component_definition,
+        sections: component_definition.sections?.map((s: any) => s.type) || [],
+        status: "published",
+      });
+
+      alert("Template published successfully!");
+      navigate("/admin/templates");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to publish template";
+      setError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -116,6 +155,13 @@ export default function NewTemplate() {
       <PageHeader title="Create New Template" description="Design a new landing page template" />
 
       <div className="p-8 space-y-6">
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Warning Alert */}
         <Alert>
           <AlertTriangle className="h-4 w-4" />
@@ -257,11 +303,11 @@ export default function NewTemplate() {
               </Button>
 
               <div className="flex items-center gap-3">
-                <Button variant="secondary" onClick={handleSaveDraft}>
+                <Button variant="secondary" onClick={handleSaveDraft} disabled={loading}>
                   <Save className="mr-2 h-4 w-4" />
                   Save as Draft
                 </Button>
-                <Button onClick={handlePublish}>
+                <Button onClick={handlePublish} disabled={loading}>
                   <Rocket className="mr-2 h-4 w-4" />
                   Publish Template
                 </Button>

@@ -1,57 +1,12 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Edit, Eye, Settings } from "lucide-react";
-
-const mockTrackers = [
-  {
-    id: "1",
-    name: "Google Analytics 4",
-    type: "google_analytics",
-    scope: "global",
-    is_active: true,
-    priority: 10,
-    created_at: "2024-01-15",
-  },
-  {
-    id: "2",
-    name: "Google Tag Manager",
-    type: "google_tag_manager",
-    scope: "global",
-    is_active: true,
-    priority: 9,
-    created_at: "2024-01-10",
-  },
-  {
-    id: "3",
-    name: "Meta Pixel",
-    type: "meta_pixel",
-    scope: "entity",
-    is_active: true,
-    priority: 8,
-    created_at: "2024-02-01",
-  },
-  {
-    id: "4",
-    name: "LinkedIn Insight Tag",
-    type: "linkedin",
-    scope: "campaign",
-    is_active: false,
-    priority: 7,
-    created_at: "2024-02-15",
-  },
-  {
-    id: "5",
-    name: "Twitter Pixel",
-    type: "twitter",
-    scope: "campaign",
-    is_active: true,
-    priority: 6,
-    created_at: "2024-03-01",
-  },
-];
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Plus, Edit, Eye, Settings, Loader2 } from "lucide-react";
+import { trackersAPI, Tracker } from "@/services/api/trackers";
 
 type ScopeType = "global" | "entity" | "campaign";
 
@@ -69,11 +24,32 @@ const getScopeColor = (scope: ScopeType) => {
 };
 
 export default function TrackersList() {
+  const [trackers, setTrackers] = useState<Tracker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadTrackers();
+  }, []);
+
+  const loadTrackers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await trackersAPI.list();
+      setTrackers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load trackers");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Group trackers by scope
   const groupedTrackers = {
-    global: mockTrackers.filter((t) => t.scope === "global"),
-    entity: mockTrackers.filter((t) => t.scope === "entity"),
-    campaign: mockTrackers.filter((t) => t.scope === "campaign"),
+    global: trackers.filter((t) => t.scope === "global"),
+    entity: trackers.filter((t) => t.scope === "entity"),
+    campaign: trackers.filter((t) => t.scope === "campaign"),
   };
 
   return (
@@ -100,7 +76,26 @@ export default function TrackersList() {
       />
 
       <div className="p-8 space-y-6">
-        {/* Global Trackers */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex items-center justify-between">
+              <span>{error}</span>
+              <Button onClick={loadTrackers} variant="outline" size="sm">
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!loading && !error && (
+          <>
+            {/* Global Trackers */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -303,6 +298,8 @@ export default function TrackersList() {
             )}
           </CardContent>
         </Card>
+          </>
+        )}
       </div>
     </div>
   );

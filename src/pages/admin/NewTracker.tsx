@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Info, Save } from "lucide-react";
+import { trackersAPI } from "@/services/api/trackers";
 
 interface TrackerFormData {
   name: string;
@@ -60,30 +61,39 @@ export default function NewTracker() {
     is_active: true,
     priority: 5,
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const updateField = (field: keyof TrackerFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
-      alert("Tracker name is required");
+      setError("Tracker name is required");
       return;
     }
 
     if (!formData.type) {
-      alert("Tracker type is required");
+      setError("Tracker type is required");
       return;
     }
 
     if (!formData.script_code.trim()) {
-      alert("Script code is required");
+      setError("Script code is required");
       return;
     }
 
-    console.log("Creating tracker:", formData);
-    alert("Tracker created successfully! (mock)");
-    navigate("/admin/trackers");
+    try {
+      setLoading(true);
+      setError(null);
+      await trackersAPI.create(formData);
+      navigate("/admin/trackers");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create tracker");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -105,6 +115,13 @@ export default function NewTracker() {
             Trackers are injected server-side and deduplicated by tracker ID. They will be automatically minified and optimized for performance.
           </AlertDescription>
         </Alert>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Basic Information */}
         <Card>
@@ -262,13 +279,13 @@ export default function NewTracker() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <Button variant="outline" onClick={handleCancel}>
+              <Button variant="outline" onClick={handleCancel} disabled={loading}>
                 Cancel
               </Button>
 
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} disabled={loading}>
                 <Save className="mr-2 h-4 w-4" />
-                Save Tracker
+                {loading ? "Saving..." : "Save Tracker"}
               </Button>
             </div>
           </CardContent>
