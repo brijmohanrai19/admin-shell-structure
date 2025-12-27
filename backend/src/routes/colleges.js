@@ -9,7 +9,7 @@ async function collegesRoutes(fastify, options) {
   fastify.get('/', async (request, reply) => {
     try {
       const result = await pool.query(
-        'SELECT * FROM colleges ORDER BY created_at DESC'
+        'SELECT * FROM colleges ORDER BY priority DESC, name ASC'
       );
       return result.rows;
     } catch (error) {

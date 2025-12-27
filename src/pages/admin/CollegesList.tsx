@@ -64,6 +64,7 @@ export default function CollegesList() {
         country: row.country || "India",
         description: row.description || "",
         courses: row.courses ? JSON.parse(row.courses) : [],
+        priority: parseInt(row.priority) || 0,
         status: "draft" as const,
       };
       await collegesAPI.create(collegeData);
@@ -78,7 +79,8 @@ export default function CollegesList() {
       city: "Tiruchirappalli",
       state: "Tamil Nadu",
       country: "India",
-      description: "National Institute of Technology - Premier engineering institute"
+      description: "National Institute of Technology - Premier engineering institute",
+      priority: "9"
     },
     {
       name: "IIIT Hyderabad",
@@ -86,7 +88,8 @@ export default function CollegesList() {
       city: "Hyderabad",
       state: "Telangana",
       country: "India",
-      description: "International Institute of Information Technology"
+      description: "International Institute of Information Technology",
+      priority: "8"
     },
     {
       name: "Anna University",
@@ -94,7 +97,8 @@ export default function CollegesList() {
       city: "Chennai",
       state: "Tamil Nadu",
       country: "India",
-      description: "State university offering engineering programs"
+      description: "State university offering engineering programs",
+      priority: "7"
     }
   ];
 
@@ -211,6 +215,7 @@ export default function CollegesList() {
           "state",
           "country",
           "description",
+          "priority",
         ]}
         title="Import Colleges from CSV"
         description="Upload a CSV file with college data. Each row will be created as a new college."

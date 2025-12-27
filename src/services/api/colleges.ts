@@ -19,18 +19,76 @@ export interface College {
   id: string;
   name: string;
   slug: string;
+
+  // Location
   city: string;
   state: string;
   country: string;
+  address: string;
+  pincode: string;
+  latitude: number | null;
+  longitude: number | null;
+  campus_area: number | null;
+
+  // Contact
+  phone: string;
+  email: string;
+  website: string;
+
+  // Establishment
+  year_established: number | null;
+  college_type: string;
+  university_affiliation: string;
+
+  // Courses & Fees
   courses: Course[];
   fee_range: FeeRange | null;
   intake: number | null;
   approvals: string[];
+
+  // Infrastructure
+  hostel_available: boolean;
+  hostel_fee_range: any;
+  library_size: number | null;
+  labs_count: number | null;
+  sports_facilities: string[];
+
+  // Placements
+  placement_percentage: number | null;
+  average_package: number | null;
+  highest_package: number | null;
+  top_recruiters: string[];
+  placement_trends: any;
+
+  // Rankings
+  nirf_rank: number | null;
+  qs_rank: number | null;
+  other_rankings: any;
+
+  // Admission
+  entrance_exams: string[];
+  admission_criteria: string;
+  seat_matrix: any;
+
+  // Media
+  logo_url: string;
+  banner_image: string;
+  gallery_images: string[];
+  virtual_tour_link: string;
+  video_url: string;
+
+  // Content
   description: string;
   admission_process: string;
+  about: string;
+  facilities: string;
+  alumni_network: string;
+
+  // Meta
   seo: any;
   crawl_policy: any;
   form_schema_id: string | null;
+  priority: number;
   status: "draft" | "live" | "archived";
   created_at: string;
   updated_at: string;

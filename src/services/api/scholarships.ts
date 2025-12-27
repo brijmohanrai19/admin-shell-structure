@@ -8,17 +8,62 @@ export interface Scholarship {
   slug: string;
   provider_name: string;
   provider_type: string;
+
+  // Type & Duration
+  scholarship_type: string;
+  level: string;
+  duration: string;
+  number_of_awards: number | null;
+  renewable: boolean;
+
+  // Amount
   amount_min: number | null;
   amount_max: number | null;
   currency: string;
+  coverage: string;
+  disbursement_schedule: string;
+
+  // Eligibility
   eligibility_criteria: string;
-  application_process: string;
+  minimum_marks: number | null;
+  income_limit: number | null;
+  age_limit: number | null;
+  gender: string;
+  category: string[];
+  disability_eligible: boolean;
+
+  // Dates
+  announcement_date: string | null;
+  application_start_date: string | null;
+  application_end_date: string | null;
   deadline: string | null;
+  result_date: string | null;
+
+  // Process
+  benefits: string;
+  application_process: string;
+  documents_required: string[];
+  selection_process: string;
+  how_to_apply: string;
+
+  // Links
+  official_website: string;
+  application_link: string;
+  guidelines_pdf: string;
+
+  // Media
+  logo_url: string;
+  banner_image: string;
+
+  // Content
   description: string;
+
+  // Meta
   seo: any;
   crawl_policy: any;
   form_schema_id: string | null;
-  status: "draft" | "live" | "archived";
+  priority: number;
+  status: "draft" | "live" | "closed" | "archived";
   created_at: string;
   updated_at: string;
 }

@@ -60,11 +60,15 @@ export default function ScholarshipsList() {
         name: row.name,
         slug: row.slug,
         provider_name: row.provider_name || "",
+        provider_type: row.provider_type || "Government",
         eligibility_criteria: row.eligibility_criteria || "",
         amount_min: row.amount_min ? parseInt(row.amount_min) : null,
         amount_max: row.amount_max ? parseInt(row.amount_max) : null,
         currency: row.currency || "INR",
+        benefits: row.benefits || "",
+        application_process: row.application_process || "",
         deadline: row.deadline || null,
+        priority: parseInt(row.priority) || 0,
         status: "draft" as const,
       };
       await scholarshipsAPI.create(scholarshipData);
@@ -77,19 +81,27 @@ export default function ScholarshipsList() {
       name: "Post Matric Scholarship",
       slug: "post-matric-2026",
       provider_name: "Ministry of Social Justice",
-      eligibility_criteria: "Students from SC/ST/OBC categories"
+      provider_type: "Government",
+      amount_min: "10000",
+      amount_max: "35000",
+      currency: "INR",
+      eligibility_criteria: "Students from SC/ST/OBC categories",
+      benefits: "Tuition fee and maintenance allowance",
+      application_process: "Apply through National Scholarship Portal",
+      priority: "8"
     },
     {
       name: "Kishore Vaigyanik Protsahan Yojana",
       slug: "kvpy-2026",
       provider_name: "Indian Institute of Science",
-      eligibility_criteria: "Students pursuing basic sciences"
-    },
-    {
-      name: "National Merit Scholarship",
-      slug: "nms-2026",
-      provider_name: "Department of Education",
-      eligibility_criteria: "Class 10 students with 60%+ marks"
+      provider_type: "Government",
+      amount_min: "60000",
+      amount_max: "84000",
+      currency: "INR",
+      eligibility_criteria: "Students pursuing basic sciences",
+      benefits: "Monthly stipend and annual grant",
+      application_process: "National level fellowship exam",
+      priority: "9"
     }
   ];
 
@@ -218,6 +230,7 @@ export default function ScholarshipsList() {
           "slug",
           "provider_name",
           "eligibility_criteria",
+          "priority",
         ]}
         title="Import Scholarships from CSV"
         description="Upload a CSV file with scholarship data. Each row will be created as a new scholarship."

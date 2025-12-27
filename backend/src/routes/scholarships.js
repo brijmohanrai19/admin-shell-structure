@@ -9,7 +9,7 @@ async function scholarshipsRoutes(fastify, options) {
   fastify.get('/', async (request, reply) => {
     try {
       const result = await pool.query(
-        'SELECT * FROM scholarships ORDER BY created_at DESC'
+        'SELECT * FROM scholarships ORDER BY priority DESC, name ASC'
       );
       return result.rows;
     } catch (error) {

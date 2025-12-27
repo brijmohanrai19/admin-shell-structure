@@ -64,6 +64,7 @@ export default function ExamsList() {
         description: row.description || "",
         eligibility: row.eligibility || "",
         exam_pattern: row.exam_pattern || "",
+        priority: parseInt(row.priority) || 0,
         status: "draft" as const,
       };
       await examsAPI.create(examData);
@@ -79,7 +80,8 @@ export default function ExamsList() {
       exam_date: "2026-02-10",
       description: "Graduate Aptitude Test in Engineering",
       eligibility: "Bachelor's degree in Engineering/Technology",
-      exam_pattern: "Computer-based test with MCQs"
+      exam_pattern: "Computer-based test with MCQs",
+      priority: "8"
     },
     {
       name: "CAT 2026",
@@ -88,7 +90,8 @@ export default function ExamsList() {
       exam_date: "2026-11-28",
       description: "Common Admission Test for MBA",
       eligibility: "Bachelor's degree with 50% marks",
-      exam_pattern: "3 sections - QA VA-RC DI-LR"
+      exam_pattern: "3 sections - QA VA-RC DI-LR",
+      priority: "7"
     },
     {
       name: "CLAT 2026",
@@ -97,7 +100,8 @@ export default function ExamsList() {
       exam_date: "2026-12-06",
       description: "Common Law Admission Test",
       eligibility: "Class 12 pass or appearing",
-      exam_pattern: "2 hour exam with 150 questions"
+      exam_pattern: "2 hour exam with 150 questions",
+      priority: "6"
     }
   ];
 
@@ -217,6 +221,7 @@ export default function ExamsList() {
           "description",
           "eligibility",
           "exam_pattern",
+          "priority",
         ]}
         title="Import Exams from CSV"
         description="Upload a CSV file with exam data. Each row will be created as a new exam."
