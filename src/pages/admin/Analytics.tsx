@@ -1,295 +1,302 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { analyticsAPI, AnalyticsOverview, CampaignAnalytics, EntityAnalytics } from "@/services/api/analytics";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  ArrowUpIcon,
-  ArrowDownIcon,
-  Download,
-  TrendingUp,
-  Users,
-  Target,
-  DollarSign,
-  Eye,
-} from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-
-interface Metric {
-  label: string;
-  value: string;
-  change: string;
-  trend: "up" | "down";
-}
-
-interface ChartDataPoint {
-  date: string;
-  views: number;
-  leads: number;
-}
-
-interface TopCampaign {
-  id: string;
-  name: string;
-  leads: number;
-  conversion: string;
-  revenue: string;
-}
-
-interface RecentLead {
-  id: string;
-  name: string;
-  exam: string;
-  campaign: string;
-  date: string;
-  status: "new" | "contacted" | "qualified";
-}
-
-const mockMetrics: Metric[] = [
-  { label: "Total Page Views", value: "124,523", change: "+12.5%", trend: "up" },
-  { label: "Total Leads", value: "3,847", change: "+8.3%", trend: "up" },
-  { label: "Active Campaigns", value: "23", change: "+2", trend: "up" },
-  { label: "Conversion Rate", value: "3.09%", change: "-0.2%", trend: "down" },
-];
-
-const mockChartData: ChartDataPoint[] = [
-  { date: "2024-01", views: 8500, leads: 245 },
-  { date: "2024-02", views: 9200, leads: 278 },
-  { date: "2024-03", views: 10100, leads: 312 },
-  { date: "2024-04", views: 11300, leads: 356 },
-  { date: "2024-05", views: 12800, leads: 402 },
-  { date: "2024-06", views: 14200, leads: 441 },
-];
-
-const mockTopCampaigns: TopCampaign[] = [
-  { id: "1", name: "VITEEE 2026 - Ads", leads: 842, conversion: "3.2%", revenue: "$12,400" },
-  { id: "2", name: "IIT JEE Landing Page", leads: 721, conversion: "2.9%", revenue: "$10,200" },
-  { id: "3", name: "Scholarship Portal", leads: 634, conversion: "4.1%", revenue: "$8,900" },
-  { id: "4", name: "NEET Preparation", leads: 512, conversion: "2.7%", revenue: "$7,100" },
-  { id: "5", name: "Engineering Admission", leads: 428, conversion: "3.5%", revenue: "$6,300" },
-];
-
-const mockRecentLeads: RecentLead[] = [
-  { id: "1", name: "Rajesh Kumar", exam: "VITEEE 2026", campaign: "Ad Campaign", date: "2024-12-26", status: "new" },
-  { id: "2", name: "Priya Sharma", exam: "JEE Main", campaign: "Landing Page", date: "2024-12-26", status: "contacted" },
-  { id: "3", name: "Amit Patel", exam: "NEET UG", campaign: "Scholarship", date: "2024-12-25", status: "qualified" },
-  { id: "4", name: "Sneha Reddy", exam: "GATE", campaign: "Engineering", date: "2024-12-25", status: "new" },
-  { id: "5", name: "Vikram Singh", exam: "CAT", campaign: "MBA Admission", date: "2024-12-24", status: "contacted" },
-];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "new":
-      return "bg-blue-500 text-white";
-    case "contacted":
-      return "bg-yellow-500 text-white";
-    case "qualified":
-      return "bg-green-500 text-white";
-    default:
-      return "bg-gray-500 text-white";
-  }
-};
-
-const MetricCard = ({ metric }: { metric: Metric }) => {
-  const isPositive = metric.trend === "up";
-  const Icon = isPositive ? ArrowUpIcon : ArrowDownIcon;
-  const changeColor = metric.change.startsWith("+") ? "text-green-600" : "text-red-600";
-
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {metric.label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">{metric.value}</div>
-        <div className={`flex items-center gap-1 text-sm mt-2 ${changeColor}`}>
-          <Icon className="h-4 w-4" />
-          <span>{metric.change}</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+import { Button } from "@/components/ui/button";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { TrendingUp, Users, FileText, Award, RefreshCw } from "lucide-react";
 
 export default function Analytics() {
-  const handleExport = () => {
-    console.log("Exporting analytics data...");
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
+  const [campaigns, setCampaigns] = useState<CampaignAnalytics | null>(null);
+  const [entities, setEntities] = useState<EntityAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, []);
+
+  const loadAnalytics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [overviewData, campaignsData, entitiesData] = await Promise.all([
+        analyticsAPI.getOverview(),
+        analyticsAPI.getCampaignAnalytics(),
+        analyticsAPI.getEntityAnalytics(),
+      ]);
+      setOverview(overviewData);
+      setCampaigns(campaignsData);
+      setEntities(entitiesData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load analytics");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={loadAnalytics}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   return (
     <div className="min-h-screen">
       <PageHeader
         title="Analytics Dashboard"
-        description="Platform-wide analytics and performance metrics"
+        description="Monitor performance and track key metrics"
         actions={
-          <div className="flex items-center gap-3">
-            <Select defaultValue="30">
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-                <SelectItem value="custom">Custom range</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-          </div>
+          <Button onClick={loadAnalytics} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
         }
       />
 
       <div className="p-8 space-y-6">
-        {/* Metrics Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {mockMetrics.map((metric) => (
-            <MetricCard key={metric.label} metric={metric} />
-          ))}
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Page Views & Leads Chart - Takes 2 columns */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Page Views & Leads Trend</CardTitle>
+        {/* Overview Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={mockChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="views"
-                    stroke="#3b82f6"
-                    name="Page Views"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="leads"
-                    stroke="#10b981"
-                    name="Leads"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="text-2xl font-bold">{overview?.totalCampaigns || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {overview?.activeCampaigns || 0} active, {overview?.draftCampaigns || 0} draft
+              </p>
             </CardContent>
           </Card>
 
-          {/* Top Campaigns */}
           <Card>
-            <CardHeader>
-              <CardTitle>Top Campaigns</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Exams</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {mockTopCampaigns.map((campaign, index) => (
-                  <Link
-                    key={campaign.id}
-                    to={`/admin/analytics/campaigns/${campaign.id}`}
-                    className="block"
-                  >
-                    <div className="flex items-start justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            #{index + 1}
-                          </span>
-                          <span className="text-sm font-medium truncate">{campaign.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span>{campaign.leads} leads</span>
-                          <span>{campaign.conversion}</span>
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold text-green-600">
-                        {campaign.revenue}
+              <div className="text-2xl font-bold">{overview?.totalExams || 0}</div>
+              <p className="text-xs text-muted-foreground">Live exams</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Colleges</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{overview?.totalColleges || 0}</div>
+              <p className="text-xs text-muted-foreground">Live colleges</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Scholarships</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{overview?.totalScholarships || 0}</div>
+              <p className="text-xs text-muted-foreground">Active scholarships</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Campaign Trends */}
+          {campaigns && campaigns.trends.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Campaign Creation Trends</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={campaigns.trends}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="count" stroke="#8884d8" name="Campaigns" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Exams by Level */}
+          {entities && entities.exams.byLevel.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Exams by Level</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={entities.exams.byLevel}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="level" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#8884d8" name="Exams" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Charts Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Colleges by Type */}
+          {entities && entities.colleges.byType.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Colleges by Type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={entities.colleges.byType}
+                      dataKey="count"
+                      nameKey="type"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label
+                    >
+                      {entities.colleges.byType.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Scholarships by Type */}
+          {entities && entities.scholarships.byType.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Scholarships by Type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={entities.scholarships.byType}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="type" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#00C49F" name="Scholarships" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Campaign Distribution */}
+        {campaigns && Object.keys(campaigns.byEntityType).length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Campaigns by Entity Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {Object.entries(campaigns.byEntityType).map(([entityType, stats]) => (
+                  <div key={entityType} className="flex items-center justify-between border-b pb-3">
+                    <div>
+                      <div className="font-medium capitalize">{entityType}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {stats.live} live, {stats.draft} draft
                       </div>
                     </div>
-                  </Link>
+                    <div className="text-2xl font-bold">{stats.total}</div>
+                  </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
-        {/* Recent Leads Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Leads</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Name
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Exam
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Campaign
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Date
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockRecentLeads.map((lead) => (
-                    <tr key={lead.id} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className="py-3 px-4 text-sm font-medium">{lead.name}</td>
-                      <td className="py-3 px-4 text-sm">{lead.exam}</td>
-                      <td className="py-3 px-4 text-sm">{lead.campaign}</td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">
-                        {new Date(lead.date).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge className={`${getStatusColor(lead.status)} capitalize`}>
-                          {lead.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Top Colleges */}
+        {entities && entities.colleges.topRanked.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Ranked Colleges (NIRF)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {entities.colleges.topRanked.map((college, index) => (
+                  <div key={index} className="flex items-center justify-between border-b pb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                        {college.nirf_rank}
+                      </div>
+                      <div>
+                        <div className="font-medium">{college.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          NIRF Rank: {college.nirf_rank}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm">
+                      {college.placement_percentage ? (
+                        <span className="text-green-600 font-medium">
+                          {college.placement_percentage}% Placement
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">N/A</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty State */}
+        {overview?.totalCampaigns === 0 && overview?.totalExams === 0 && overview?.totalColleges === 0 && (
+          <Card>
+            <CardContent className="py-12">
+              <div className="text-center text-muted-foreground">
+                <TrendingUp className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No Data Available</h3>
+                <p className="text-sm">
+                  Start creating campaigns, exams, colleges, and scholarships to see analytics.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

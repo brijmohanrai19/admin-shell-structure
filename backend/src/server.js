@@ -13,6 +13,7 @@ const trackersRoutes = require('./routes/trackers');
 const redirectsRoutes = require('./routes/redirects');
 const campaignsRoutes = require('./routes/campaigns');
 const seoRoutes = require('./routes/seo');
+const analyticsRoutes = require('./routes/analytics');
 
 async function start() {
   try {
@@ -41,6 +42,7 @@ await fastify.register(cors, {
     await fastify.register(redirectsRoutes, { prefix: '/api/admin/redirects' });
     await fastify.register(campaignsRoutes, { prefix: '/api/admin/campaigns' });
     await fastify.register(seoRoutes, { prefix: '/api/admin/seo' });
+    await fastify.register(analyticsRoutes, { prefix: '/api/admin/analytics' });
 
     // Health check
     fastify.get('/health', async (request, reply) => {
@@ -67,6 +69,7 @@ await fastify.register(cors, {
 ║   Redirects: /api/admin/redirects      ║
 ║   Campaigns: /api/admin/campaigns      ║
 ║   SEO: /api/admin/seo                  ║
+║   Analytics: /api/admin/analytics      ║
 ╚════════════════════════════════════════╝
     `);
   } catch (error) {
